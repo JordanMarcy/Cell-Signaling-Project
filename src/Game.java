@@ -1,5 +1,4 @@
 import java.applet.*;
-
 import java.awt.event.*;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
@@ -17,20 +16,18 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	
 	private static final long serialVersionUID = 1;	
 	private static final int width = 700, height = 600;
-	public long currentTime;
 	private Thread mainLoop;
 	private boolean running = true;
 	private int countdown = 50;
 	
-	public Graphics bufferGraphics;
+	private Graphics bufferGraphics;
 	
-	public Image offscreen;	
+	private Image offscreen;	
 	private HashMap<String, BufferedImage> imageMap = new HashMap<String, BufferedImage>();
-	private BufferedImage finalSprites;
 	private BufferedImage[] cannons = new BufferedImage[4];
 	private BufferedImage[] balls = new BufferedImage[5];
 		
-	private StartingArrow strandOne, strandTwo, strandThree, strandFour;	
+	private StartingArrow[] startingArrowStrand = new StartingArrow[4];
 	private Shooter shooter;
 	private CurrentBall currentBall;
 	private Font hosFont;
@@ -40,8 +37,9 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	private int difficulty = 1;
 	private int cannon = 0, setCannon = 0, rotation = 0, strand = 0;
 	private int score = 0, progress = 0;
-	private int arr1 = 0, arr2 = 0, arr3 = 0, arr4 = 0;
-	private int numberOfMoleculesOne = 0, numberOfMoleculesTwo = 0, numberOfMoleculesThree = 0, numberOfMoleculesFour = 0;
+	private int[] arr = new int[4];
+	private int numberOfMolecules[] = new int[4];
+	
 	
 	private BufferedImage centerTitle;
 	private ArrayList<CurrentBall> listOne = new ArrayList<CurrentBall>();
@@ -54,6 +52,15 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	private ArrayList<CurrentBall> inPlayTwo = new ArrayList<CurrentBall>();
 	private ArrayList<CurrentBall> inPlayThree = new ArrayList<CurrentBall>();
 	private ArrayList<CurrentBall> inPlayFour = new ArrayList<CurrentBall>();
+	
+	private ArrayList<Button> chooseYourOwnAdventureButtons = new ArrayList<Button>();
+	private ArrayList<Button> pathwayMissionButtons = new ArrayList<Button>();
+	private ArrayList<Button> pauseScreenButtons = new ArrayList<Button>();
+	private ArrayList<Button> levelButtons = new ArrayList<Button>();
+	private ArrayList<Button> missionButtons = new ArrayList<Button>();
+	
+	private BufferedImage[][] strips = new BufferedImage[4][5];
+	private BufferedImage[][] rips = new BufferedImage[4][2];
 
 	private boolean ballExistence = false;
 	private boolean eraserFired = false;
@@ -94,7 +101,8 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	}
 	
 	private void setUpLists(int level) {
-		arr1 = 0; arr2 = 0; arr3 = 0; arr4 = 0;
+		arr[0] = 0; arr[1] = 0; arr[2] = 0; arr[3] = 0;
+		
 		listOne.clear(); listTwo.clear(); listThree.clear(); listFour.clear();
 		inPlayOne.clear(); inPlayTwo.clear(); inPlayThree.clear(); inPlayFour.clear();
 		score = 0;
@@ -113,17 +121,17 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	}
 	
 	private void setUpLevelOne() {
-		numberOfMoleculesOne = 1;
-		numberOfMoleculesTwo = 1;
-		numberOfMoleculesThree = 4;
-		numberOfMoleculesFour = 0;
+		numberOfMolecules[0] = 1;
+		numberOfMolecules[1] = 1;
+		numberOfMolecules[2] = 4;
+		numberOfMolecules[3] = 0;
 						
 		centerTitle = imageMap.get("apc");
 		
-		strandOne = new StartingArrow(0, true,  imageMap.get("blueArrow"), ArrowType.ACTIVATE);
-		strandTwo = new StartingArrow(1, false,  imageMap.get("greenInhibitor"), ArrowType.INHIBIT);
-		strandThree = new StartingArrow(2, false,  imageMap.get("redInhibitor"), ArrowType.INHIBIT);
-		strandFour = null;
+		startingArrowStrand[0] = new StartingArrow(0, true,  imageMap.get("blueArrow"), ArrowType.ACTIVATE);
+		startingArrowStrand[1] = new StartingArrow(1, false,  imageMap.get("greenInhibitor"), ArrowType.INHIBIT);
+		startingArrowStrand[2] = new StartingArrow(2, false,  imageMap.get("redInhibitor"), ArrowType.INHIBIT);
+		startingArrowStrand[3] = null;
 
 		
 		listOne.add(new CurrentBall(0, balls[0], imageMap.get("mcdk"), null, null, false, false));
@@ -138,21 +146,21 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	}
 	
 	private void setUpLevelTwo() {
-		numberOfMoleculesOne = 5;
-		numberOfMoleculesTwo = 3;
-		numberOfMoleculesThree = 1;
-		numberOfMoleculesFour = 0;
+		numberOfMolecules[0] = 5;
+		numberOfMolecules[1] = 3;
+		numberOfMolecules[2] = 1;
+		numberOfMolecules[3] = 0;
 		
-		strandOne = new StartingArrow(0, false,  imageMap.get("redArrow"), ArrowType.ACTIVATE);
-		strandTwo = new StartingArrow(1, false,  imageMap.get("blueArrow"), ArrowType.ACTIVATE);
-		strandThree = new StartingArrow(2, true,  imageMap.get("orangeArrow"), ArrowType.ACTIVATE);;
-		strandFour = null;
+		startingArrowStrand[0] = new StartingArrow(0, false,  imageMap.get("redArrow"), ArrowType.ACTIVATE);
+		startingArrowStrand[1] = new StartingArrow(1, false,  imageMap.get("blueArrow"), ArrowType.ACTIVATE);
+		startingArrowStrand[2] = new StartingArrow(2, true,  imageMap.get("orangeArrow"), ArrowType.ACTIVATE);;
+		startingArrowStrand[3] = null;
 		
 		score = 0;
 		progress = 0;
 		centerTitle = imageMap.get("p53");
 		
-		arr1 = 0; arr2 = 0; arr3 = 0; arr4 = 0;
+		arr[0] = 0; arr[1] = 0; arr[2] = 0; arr[3] = 0;
 		
 		listOne.clear(); listTwo.clear(); listThree.clear(); listFour.clear();
 		inPlayOne.clear(); inPlayTwo.clear(); inPlayThree.clear(); inPlayFour.clear(); 
@@ -171,21 +179,21 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	}
 	
 	private void setUpLevelThree() {
-		numberOfMoleculesOne = 5;
-		numberOfMoleculesTwo = 3;
-		numberOfMoleculesThree = 3;
-		numberOfMoleculesFour = 3;
+		numberOfMolecules[0] = 5;
+		numberOfMolecules[1] = 3;
+		numberOfMolecules[2] = 3;
+		numberOfMolecules[3] = 3;
 		
-		strandOne = new StartingArrow(0, true,  imageMap.get("greenArrow"), ArrowType.ACTIVATE);
-		strandTwo = new StartingArrow(1, true,  imageMap.get("redArrow"), ArrowType.INHIBIT);
-		strandThree = new StartingArrow(2, false,  imageMap.get("orangeInhibitor"), ArrowType.INHIBIT);
-		strandFour = new StartingArrow(3, false,  imageMap.get("blueInhibitor"), ArrowType.INHIBIT);
+		startingArrowStrand[0] = new StartingArrow(0, true,  imageMap.get("greenArrow"), ArrowType.ACTIVATE);
+		startingArrowStrand[1] = new StartingArrow(1, true,  imageMap.get("redArrow"), ArrowType.INHIBIT);
+		startingArrowStrand[2] = new StartingArrow(2, false,  imageMap.get("orangeInhibitor"), ArrowType.INHIBIT);
+		startingArrowStrand[3] = new StartingArrow(3, false,  imageMap.get("blueInhibitor"), ArrowType.INHIBIT);
 		
 		score = 0;
 		progress = 0;
 		centerTitle = imageMap.get("sckd");
 		
-		arr1 = 0; arr2 = 0; arr3 = 0; arr4 = 0;
+		arr[0] = 0; arr[1] = 0; arr[2] = 0; arr[3] = 0;
 
 		listOne.clear(); listTwo.clear(); listThree.clear(); listFour.clear();
 		inPlayOne.clear(); inPlayTwo.clear(); inPlayThree.clear(); inPlayFour.clear();
@@ -212,15 +220,15 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	
 	private void setUpLevelFour() {
 		
-		numberOfMoleculesOne = 1;
-		numberOfMoleculesTwo = 0;
-		numberOfMoleculesThree = 1;
-		numberOfMoleculesFour = 0;
+		numberOfMolecules[0] = 1;
+		numberOfMolecules[1] = 0;
+		numberOfMolecules[2] = 1;
+		numberOfMolecules[3] = 0;
 		centerTitle = imageMap.get("notch");
-		strandOne = new StartingArrow(0, false, imageMap.get("greenArrow"), ArrowType.ACTIVATE);
-		strandTwo = null;
-		strandThree = new StartingArrow(2, true, imageMap.get("orangeArrow"), ArrowType.ACTIVATE);
-		strandFour = null;	
+		startingArrowStrand[0] = new StartingArrow(0, false, imageMap.get("greenArrow"), ArrowType.ACTIVATE);
+		startingArrowStrand[1] = null;
+		startingArrowStrand[2] = new StartingArrow(2, true, imageMap.get("orangeArrow"), ArrowType.ACTIVATE);
+		startingArrowStrand[3] = null;	
 		listOne.add(new CurrentBall(0, balls[1], imageMap.get("genetranscription"),  null, null, false, true));
 		listThree.add(new CurrentBall(2, balls[2], imageMap.get("delta"), null, null, false, false));
 		
@@ -231,29 +239,29 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	private void setUpLevelFive() {
 		int placeHolder = generator.nextInt(2);
 		if (placeHolder == 0){
-			numberOfMoleculesOne = 2;
-			numberOfMoleculesThree = 1;
+			numberOfMolecules[0] = 2;
+			numberOfMolecules[2] = 1;
 			centerTitle = imageMap.get("tgfbeta");
-			strandOne = new StartingArrow(0, false, imageMap.get("orangeArrow"), ArrowType.ACTIVATE);
-			strandThree = new StartingArrow(2, true,imageMap.get("redArrow"), ArrowType.ACTIVATE);
+			startingArrowStrand[0] = new StartingArrow(0, false, imageMap.get("orangeArrow"), ArrowType.ACTIVATE);
+			startingArrowStrand[2] = new StartingArrow(2, true,imageMap.get("redArrow"), ArrowType.ACTIVATE);
 			listThree.add(new CurrentBall(2, balls[3], imageMap.get("nodal"),  null, null, true, false));
 			listOne.add(new CurrentBall(0, balls[2], imageMap.get("smads"), ArrowType.ACTIVATE,imageMap.get("redArrow"), false, true));
 			listOne.add(new CurrentBall(0, balls[2], imageMap.get("genetranscription"), null, null, false, false));
 		} else if (placeHolder == 1) {
-			numberOfMoleculesOne = 1;
-			numberOfMoleculesThree = 2;
+			numberOfMolecules[0] = 1;
+			numberOfMolecules[2] = 2;
 			centerTitle = imageMap.get("smads");
-			strandOne = new StartingArrow(0, false, imageMap.get("orangeArrow"), ArrowType.ACTIVATE);
-			strandThree = new StartingArrow(2, true,imageMap.get("redArrow"), ArrowType.ACTIVATE);
+			startingArrowStrand[0] = new StartingArrow(0, false, imageMap.get("orangeArrow"), ArrowType.ACTIVATE);
+			startingArrowStrand[2] = new StartingArrow(2, true,imageMap.get("redArrow"), ArrowType.ACTIVATE);
 			listThree.add(new CurrentBall(2, balls[3], imageMap.get("tgfbeta"), ArrowType.ACTIVATE,imageMap.get("redArrow"), true, false));
 			listThree.add(new CurrentBall(2, balls[3], imageMap.get("nodal"),  null, null, true, true));
 			listOne.add(new CurrentBall(0, balls[2], imageMap.get("genetranscription"), ArrowType.ACTIVATE, imageMap.get("orangeArrow"), false, false));
 		}
 		
-		numberOfMoleculesTwo = 0;
-		numberOfMoleculesFour = 0;
-		strandTwo = null;
-		strandFour = null;
+		numberOfMolecules[1] = 0;
+		numberOfMolecules[3] = 0;
+		startingArrowStrand[1] = null;
+		startingArrowStrand[3] = null;
 		
 		score = 0;
 		progress = 0;
@@ -262,41 +270,41 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	private void setUpLevelSix() {
 		int placeHolder = generator.nextInt(3);
 		if (placeHolder == 0){
-			numberOfMoleculesOne = 3;
-			numberOfMoleculesThree = 1;
+			numberOfMolecules[0] = 3;
+			numberOfMolecules[2] = 1;
 			centerTitle = imageMap.get("patched");
-			strandOne = new StartingArrow(0, false, imageMap.get("redInhibitor"), ArrowType.INHIBIT);
-			strandThree = new StartingArrow(2, true,imageMap.get("blueInhibitor"), ArrowType.INHIBIT);
+			startingArrowStrand[0] = new StartingArrow(0, false, imageMap.get("redInhibitor"), ArrowType.INHIBIT);
+			startingArrowStrand[2] = new StartingArrow(2, true,imageMap.get("blueInhibitor"), ArrowType.INHIBIT);
 			listThree.add(new CurrentBall(2, balls[0], imageMap.get("hedgehog"),  null, null, true, true));
 			listOne.add(new CurrentBall(0, balls[3], imageMap.get("smo"), ArrowType.ACTIVATE,imageMap.get("redArrow"), false, false));
 			listOne.add(new CurrentBall(0, balls[3], imageMap.get("gli"), ArrowType.ACTIVATE,imageMap.get("redArrow"), false, false));
 			listOne.add(new CurrentBall(0, balls[3], imageMap.get("genetranscription"), ArrowType.ACTIVATE,imageMap.get("redArrow"), false, false));
 		} else if (placeHolder == 1) {
-			numberOfMoleculesOne = 2;
-			numberOfMoleculesThree = 2;
+			numberOfMolecules[0] = 2;
+			numberOfMolecules[2] = 2;
 			centerTitle = imageMap.get("smo");
-			strandOne = new StartingArrow(0, false,imageMap.get("redArrow"), ArrowType.ACTIVATE);
-			strandThree = new StartingArrow(2, true,imageMap.get("blueInhibitor"), ArrowType.INHIBIT);
+			startingArrowStrand[0] = new StartingArrow(0, false,imageMap.get("redArrow"), ArrowType.ACTIVATE);
+			startingArrowStrand[2] = new StartingArrow(2, true,imageMap.get("blueInhibitor"), ArrowType.INHIBIT);
 			listThree.add(new CurrentBall(2, balls[0], imageMap.get("patched"),  ArrowType.INHIBIT,imageMap.get("blueInhibitor"), true, true));
 			listThree.add(new CurrentBall(2, balls[0], imageMap.get("hedgehog"), null, null, false, false));
 			listOne.add(new CurrentBall(0, balls[3], imageMap.get("gli"), ArrowType.ACTIVATE,imageMap.get("redArrow"), false, false));
 			listOne.add(new CurrentBall(0, balls[3], imageMap.get("genetranscription"), ArrowType.ACTIVATE,imageMap.get("redArrow"), false, false));
 		} else if (placeHolder == 2) {
-			numberOfMoleculesOne = 1;
-			numberOfMoleculesThree = 3;
+			numberOfMolecules[0] = 1;
+			numberOfMolecules[2] = 3;
 			centerTitle = imageMap.get("gli");
-			strandOne = new StartingArrow(0, false,imageMap.get("redArrow"), ArrowType.ACTIVATE);
-			strandThree = new StartingArrow(2, true,imageMap.get("blueArrow"), ArrowType.ACTIVATE);
+			startingArrowStrand[0] = new StartingArrow(0, false,imageMap.get("redArrow"), ArrowType.ACTIVATE);
+			startingArrowStrand[2] = new StartingArrow(2, true,imageMap.get("blueArrow"), ArrowType.ACTIVATE);
 			listThree.add(new CurrentBall(2, balls[0], imageMap.get("smo"),  ArrowType.INHIBIT,imageMap.get("blueInhibitor"), true, true));
 			listThree.add(new CurrentBall(2, balls[0], imageMap.get("patched"), ArrowType.INHIBIT, imageMap.get("blueInhibitor"), true, false));
 			listThree.add(new CurrentBall(2, balls[0], imageMap.get("hedgehog"), null, null, true, false));
 			listOne.add(new CurrentBall(0, balls[3], imageMap.get("genetranscription"), ArrowType.ACTIVATE,imageMap.get("redArrow"), false, false));
 		}
 		
-		numberOfMoleculesTwo = 0;
-		numberOfMoleculesFour = 0;
-		strandTwo = null;
-		strandFour = null;
+		numberOfMolecules[1] = 0;
+		numberOfMolecules[3] = 0;
+		startingArrowStrand[1] = null;
+		startingArrowStrand[3] = null;
 		
 		score = 0;
 		progress = 0;
@@ -305,44 +313,44 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	private void setUpLevelSeven() {
 		int placeHolder = generator.nextInt(4);
 		if (placeHolder == 0){
-			numberOfMoleculesOne = 4;
-			numberOfMoleculesThree = 1;
+			numberOfMolecules[0] = 4;
+			numberOfMolecules[2] = 1;
 			centerTitle = imageMap.get("frizzled");
-			strandOne = new StartingArrow(0, false,imageMap.get("blueArrow"), ArrowType.ACTIVATE);
-			strandThree = new StartingArrow(2, true, imageMap.get("greenArrow"), ArrowType.ACTIVATE);
+			startingArrowStrand[0] = new StartingArrow(0, false,imageMap.get("blueArrow"), ArrowType.ACTIVATE);
+			startingArrowStrand[2] = new StartingArrow(2, true, imageMap.get("greenArrow"), ArrowType.ACTIVATE);
 			listThree.add(new CurrentBall(2, balls[1], imageMap.get("wnt"),  null, null, true, true));
 			listOne.add(new CurrentBall(0, balls[0], imageMap.get("lrp"), ArrowType.INHIBIT, imageMap.get("blueInhibitor"), false, false));
 			listOne.add(new CurrentBall(0, balls[0], imageMap.get("apc"), ArrowType.INHIBIT, imageMap.get("blueInhibitor"), false, false));
 			listOne.add(new CurrentBall(0, balls[0],  imageMap.get("betacatenin"), ArrowType.ACTIVATE,imageMap.get("blueArrow"), false, false));
 			listOne.add(new CurrentBall(0, balls[0], imageMap.get("genetranscription"), null, null, false, false));
 		} else if (placeHolder == 1) {
-			numberOfMoleculesOne = 3;
-			numberOfMoleculesThree = 2;
+			numberOfMolecules[0] = 3;
+			numberOfMolecules[2] = 2;
 			centerTitle = imageMap.get("lrp");
-			strandOne = new StartingArrow(0, false, imageMap.get("blueInhibitor"), ArrowType.INHIBIT);
-			strandThree = new StartingArrow(2, true, imageMap.get("greenArrow"), ArrowType.ACTIVATE);
+			startingArrowStrand[0] = new StartingArrow(0, false, imageMap.get("blueInhibitor"), ArrowType.INHIBIT);
+			startingArrowStrand[2] = new StartingArrow(2, true, imageMap.get("greenArrow"), ArrowType.ACTIVATE);
 			listThree.add(new CurrentBall(2, balls[1], imageMap.get("frizzled"),  ArrowType.ACTIVATE, imageMap.get("greenArrow"), true, true));
 			listThree.add(new CurrentBall(2, balls[1], imageMap.get("wnt"), null, null, true, false));
 			listOne.add(new CurrentBall(0, balls[0], imageMap.get("apc"), ArrowType.INHIBIT, imageMap.get("blueInhibitor"), false, false));
 			listOne.add(new CurrentBall(0, balls[0],  imageMap.get("betacatenin"), ArrowType.ACTIVATE,imageMap.get("blueArrow"), false, false));
 			listOne.add(new CurrentBall(0, balls[0], imageMap.get("genetranscription"), null, null, false, false));
 		} else if (placeHolder == 2) {
-			numberOfMoleculesOne = 2;
-			numberOfMoleculesThree = 3;
+			numberOfMolecules[0] = 2;
+			numberOfMolecules[2] = 3;
 			centerTitle = imageMap.get("apc");
-			strandOne = new StartingArrow(0, false, imageMap.get("blueInhibitor"), ArrowType.INHIBIT);
-			strandThree = new StartingArrow(2, true, imageMap.get("greenInhibitor"), ArrowType.INHIBIT);
+			startingArrowStrand[0] = new StartingArrow(0, false, imageMap.get("blueInhibitor"), ArrowType.INHIBIT);
+			startingArrowStrand[2] = new StartingArrow(2, true, imageMap.get("greenInhibitor"), ArrowType.INHIBIT);
 			listThree.add(new CurrentBall(2, balls[1], imageMap.get("lrp"),  ArrowType.ACTIVATE, imageMap.get("greenArrow"), true, true));
 			listThree.add(new CurrentBall(2, balls[1], imageMap.get("frizzled"), ArrowType.ACTIVATE, imageMap.get("greenArrow"), true, false));
 			listThree.add(new CurrentBall(2, balls[1], imageMap.get("wnt"), null, null, true, false));
 			listOne.add(new CurrentBall(0, balls[0],  imageMap.get("betacatenin"), ArrowType.ACTIVATE,imageMap.get("blueArrow"), false, false));
 			listOne.add(new CurrentBall(0, balls[0], imageMap.get("genetranscription"), null, null, false, false));
 		} else if (placeHolder == 3) {
-			numberOfMoleculesOne = 1;
-			numberOfMoleculesThree = 4;
+			numberOfMolecules[0] = 1;
+			numberOfMolecules[2] = 4;
 			centerTitle =  imageMap.get("betacatenin");
-			strandOne = new StartingArrow(0, false,imageMap.get("blueArrow"), ArrowType.ACTIVATE);
-			strandThree = new StartingArrow(2, true, imageMap.get("greenInhibitor"), ArrowType.INHIBIT);
+			startingArrowStrand[0] = new StartingArrow(0, false,imageMap.get("blueArrow"), ArrowType.ACTIVATE);
+			startingArrowStrand[2] = new StartingArrow(2, true, imageMap.get("greenInhibitor"), ArrowType.INHIBIT);
 			listThree.add(new CurrentBall(2, balls[1], imageMap.get("apc"),  ArrowType.INHIBIT, imageMap.get("greenInhibitor"), true, true));
 			listThree.add(new CurrentBall(2, balls[1], imageMap.get("lrp"),  ArrowType.ACTIVATE, imageMap.get("greenArrow"), true, true));
 			listThree.add(new CurrentBall(2, balls[1], imageMap.get("frizzled"),  ArrowType.ACTIVATE, imageMap.get("greenArrow"), true, true));
@@ -350,10 +358,10 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 			listOne.add(new CurrentBall(2, balls[0], imageMap.get("genetranscription"), null, null, false, true));
 		}
 		
-		numberOfMoleculesTwo = 0;
-		numberOfMoleculesFour = 0;
-		strandTwo = null;
-		strandFour = null;
+		numberOfMolecules[1] = 0;
+		numberOfMolecules[3] = 0;
+		startingArrowStrand[1] = null;
+		startingArrowStrand[3] = null;
 		
 		score = 0;
 		progress = 0;
@@ -361,7 +369,7 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		
 	private void getImages() throws IOException {
 		URL url = new URL(getCodeBase(), "CannonGameSpriteSheet.png");
-		finalSprites = ImageIO.read(url);
+		BufferedImage finalSprites = ImageIO.read(url);
 		
 		imageMap.put("blueArrow", finalSprites.getSubimage(23, 0, 16, 16));
 		imageMap.put("blueInhibitor", finalSprites.getSubimage(1024, 0, 19, 18));
@@ -502,13 +510,6 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		imageMap.put("replay", tutorialSprites.getSubimage(1358, 0, 91, 51));
 	}
 	
-	
-	private ArrayList<Button> chooseYourOwnAdventureButtons = new ArrayList<Button>();
-	private ArrayList<Button> pathwayMissionButtons = new ArrayList<Button>();
-	private ArrayList<Button> pauseScreenButtons = new ArrayList<Button>();
-	private ArrayList<Button> levelButtons = new ArrayList<Button>();
-	private ArrayList<Button> missionButtons = new ArrayList<Button>();
-
 	private void createButtons() {
 		Button lvlOneBut = new Button(165, 254,  imageMap.get("lvl1"),  imageMap.get("levelPressed"), -1);
 		Button lvlTwoBut = new Button(300, 254,  imageMap.get("lvl2"),  imageMap.get("levelPressed"), -2);
@@ -557,7 +558,6 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		
 	}
 	
-	
 	public void update(Graphics g) {
 		paint(g);
 	}
@@ -590,8 +590,7 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 			}
 			if (!playing) {
 				repaint();
-			}
-			
+			}		
 		}
 	}
 	
@@ -620,9 +619,6 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		} 
 	}
 
-	
-	
-	
 	static void activateAntiAliasing(Graphics g) {
 	    try {
 	        Graphics2D g2d = (Graphics2D)g;
@@ -652,13 +648,11 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		drawMoleculesInPlay();
 		if (!simplifying) drawEraser();
 		if (!simplifying) drawProgressBar();
-		drawCurrentBall();
-		
+		drawCurrentBall();	
 		if (!playing) drawMenu();
 		if (pause) drawPauseScreen();
 		if (pickDifficulty && !playing) drawDifficultyScreen();
 		if (playing) bufferGraphics.drawImage(imageMap.get("greyBorder"), 0, 0, this);
-	
 		g.drawImage(offscreen, 0, 0, this);
 	}
 	
@@ -729,13 +723,11 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	private void drawProgressBar() {
 		int heightProg = getHeightOfBar();
 		for (int i = 0; i < progress; i++) {
-			bufferGraphics.drawImage( imageMap.get("progressBar"), 623, 515 - heightProg * (i+1), imageMap.get("progressBar").getWidth(this), heightProg, this);
+			bufferGraphics.drawImage(imageMap.get("progressBar"), 623, 515 - heightProg * (i+1), imageMap.get("progressBar").getWidth(this), heightProg, this);
 		}
 	}
 	
 	
-	private BufferedImage[][] strips = new BufferedImage[4][5];
-	private BufferedImage[][] rips = new BufferedImage[4][2];
 
 	
 	private void checkSimplificationProgress(){
@@ -877,10 +869,10 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 			
 		}		
 		
-		if (strandOne != null) strandOne.paintArrow((Graphics2D) bufferGraphics, this);
-		if (strandTwo != null) strandTwo.paintArrow((Graphics2D) bufferGraphics, this);
-		if (strandThree != null) strandThree.paintArrow((Graphics2D) bufferGraphics, this);
-		if (strandFour != null) strandFour.paintArrow((Graphics2D) bufferGraphics, this);
+		if (startingArrowStrand[0] != null) startingArrowStrand[0].paintArrow((Graphics2D) bufferGraphics, this);
+		if (startingArrowStrand[1] != null) startingArrowStrand[1].paintArrow((Graphics2D) bufferGraphics, this);
+		if (startingArrowStrand[2] != null) startingArrowStrand[2].paintArrow((Graphics2D) bufferGraphics, this);
+		if (startingArrowStrand[3] != null) startingArrowStrand[3].paintArrow((Graphics2D) bufferGraphics, this);
 		
 		for (int i = 0; i < inPlayOne.size(); i++) {
 			CurrentBall b = inPlayOne.get(i);
@@ -901,7 +893,7 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	}
 	
 	private int getHeightOfBar() {
-		int totalMols = numberOfMoleculesOne + numberOfMoleculesTwo + numberOfMoleculesThree + numberOfMoleculesFour;
+		int totalMols = numberOfMolecules[0] + numberOfMolecules[1] + numberOfMolecules[2] + numberOfMolecules[3];
 		if (totalMols > 0) return 400 / (totalMols);
 		return -100;
 	}
@@ -951,10 +943,10 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	}
 	
 	public void rotate() {
-		if (strandOne != null) setStartingArrowPosition(strandOne, 6);
-		if (strandTwo != null) setStartingArrowPosition(strandTwo, 0);
-		if (strandThree != null) setStartingArrowPosition(strandThree, 2);
-		if (strandFour != null) setStartingArrowPosition(strandFour, 4);
+		if (startingArrowStrand[0] != null) setStartingArrowPosition(startingArrowStrand[0], 6);
+		if (startingArrowStrand[1] != null) setStartingArrowPosition(startingArrowStrand[1], 0);
+		if (startingArrowStrand[2] != null) setStartingArrowPosition(startingArrowStrand[2], 2);
+		if (startingArrowStrand[3] != null) setStartingArrowPosition(startingArrowStrand[3], 4);
 
 		for (int i = 0; i < inPlayOne.size(); i++) {
 			CurrentBall b = inPlayOne.get(i);
@@ -1092,30 +1084,21 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	
 	private void increaseArray() {
 		switch(strand) {
-		case 0: arr1++; inPlayOne.add(currentBall); break; 
-		case 1: arr2++; inPlayTwo.add(currentBall); break;
-		case 2: arr3++; inPlayThree.add(currentBall); break;
-		case 3: arr4++; inPlayFour.add(currentBall); break;
+		case 0: arr[0]++; inPlayOne.add(currentBall); break; 
+		case 1: arr[1]++; inPlayTwo.add(currentBall); break;
+		case 2: arr[2]++; inPlayThree.add(currentBall); break;
+		case 3: arr[3]++; inPlayFour.add(currentBall); break;
 		}
 	}
 	
 	private void decreaseArray(int collisionStrand, CurrentBall b) {
 		switch(collisionStrand) {
-		case 0: arr1--; inPlayOne.remove(b); break;
-		case 1: arr2--; inPlayTwo.remove(b); break;
-		case 2: arr3--; inPlayThree.remove(b); break;
-		case 3: arr4--; inPlayFour.remove(b); break;
+		case 0: arr[0]--; inPlayOne.remove(b); break;
+		case 1: arr[1]--; inPlayTwo.remove(b); break;
+		case 2: arr[2]--; inPlayThree.remove(b); break;
+		case 3: arr[3]--; inPlayFour.remove(b); break;
 		}
 	}
-	/*
-	private void simplifyArray(CurrentBall b) {
-		switch(b.strand) {
-		case 0: inPlayOne.remove(b); break;
-		case 1: inPlayTwo.remove(b); break;
-		case 2: inPlayThree.remove(b); break;
-		case 3: inPlayFour.remove(b); break;
-		}
-	}*/
 	
 	private void checkPreviousBall(Rectangle prevRect, Rectangle ballRec, CurrentBall previousBall) {
 		if (ballRec.intersects(prevRect)) {
@@ -1161,36 +1144,36 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 			Rectangle centerRect = new Rectangle(373, 272, imageMap.get("centerMolecule").getWidth(null) - 20, imageMap.get("centerMolecule").getHeight(null) - 20);
 			Rectangle startingArrowRect;
 			if (ballExistence && rotation % 2 == 0) {			
-				if (arr1 > 0) {
+				if (arr[0] > 0) {
 					previousBall = inPlayOne.get(inPlayOne.size()-1);
 					Rectangle prevRect = new Rectangle(previousBall.getX(), previousBall.getY(), 35, 35);
 					checkPreviousBall(prevRect, ballRec, previousBall);
-				} else if (strandOne != null){
-					startingArrowRect = strandOne.getBounds();
+				} else if (startingArrowStrand[0] != null){
+					startingArrowRect = startingArrowStrand[0].getBounds();
 					checkStartingArrow(ballRec, startingArrowRect, 0);
 				}
-				if (arr2 > 0) {
+				if (arr[1] > 0) {
 					previousBall = inPlayTwo.get(inPlayTwo.size()-1);
 					Rectangle prevRect = new Rectangle(previousBall.getX(), previousBall.getY(), 35, 35);
 					checkPreviousBall(prevRect, ballRec, previousBall);
-				} else if (strandTwo != null) {
-						startingArrowRect = strandTwo.getBounds();
+				} else if (startingArrowStrand[1] != null) {
+						startingArrowRect = startingArrowStrand[1].getBounds();
 						checkStartingArrow(ballRec, startingArrowRect, 1);
 				}
-				if (arr3 > 0) {
+				if (arr[2] > 0) {
 					previousBall = inPlayThree.get(inPlayThree.size()-1);
 					Rectangle prevRect = new Rectangle(previousBall.getX(), previousBall.getY(), 35, 35);
 					checkPreviousBall(prevRect, ballRec, previousBall);
-				} else if (strandThree != null) {
-					startingArrowRect = strandThree.getBounds();
+				} else if (startingArrowStrand[2] != null) {
+					startingArrowRect = startingArrowStrand[2].getBounds();
 					checkStartingArrow(ballRec, startingArrowRect, 2);
 				}
-				if (arr4 > 0) {
+				if (arr[3] > 0) {
 					previousBall = inPlayFour.get(inPlayFour.size()-1);
 					Rectangle prevRect = new Rectangle(previousBall.getX(), previousBall.getY(), 35, 35);
 					checkPreviousBall(prevRect, ballRec, previousBall);
-				} else if (strandFour != null){
-					startingArrowRect = strandFour.getBounds();
+				} else if (startingArrowStrand[3] != null){
+					startingArrowRect = startingArrowStrand[3].getBounds();
 					checkStartingArrow(ballRec, startingArrowRect, 3);
 				}				
 			}			
@@ -1228,13 +1211,13 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 			}
 			
 			switch (strand) {
-			case 0: if (arr1 < numberOfMoleculesOne) {currentBall = listOne.get(arr1); newBall = true;} 
+			case 0: if (arr[0] < numberOfMolecules[0]) {currentBall = listOne.get(arr[0]); newBall = true;} 
 				break;
-			case 1: if (arr2 < numberOfMoleculesTwo) {currentBall = listTwo.get(arr2); newBall = true;}
+			case 1: if (arr[1] < numberOfMolecules[1]) {currentBall = listTwo.get(arr[1]); newBall = true;}
 				break;
-			case 2: if (arr3 < numberOfMoleculesThree) {currentBall = listThree.get(arr3); newBall = true;}
+			case 2: if (arr[2] < numberOfMolecules[2]) {currentBall = listThree.get(arr[2]); newBall = true;}
 				break;
-			case 3: if (arr4 < numberOfMoleculesFour) {currentBall = listFour.get(arr4); newBall = true;}
+			case 3: if (arr[3] < numberOfMolecules[3]) {currentBall = listFour.get(arr[3]); newBall = true;}
 				break;
 			case 4: currentBall = listFive.get(0); newBall = true; break;
 			}
@@ -1243,7 +1226,7 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 				setCurrentBallPosition();
 			}
 			
-			if (arr1 == numberOfMoleculesOne && arr2 == numberOfMoleculesTwo && arr3 == numberOfMoleculesThree && arr4 == numberOfMoleculesFour) {
+			if (arr[0] == numberOfMolecules[0] && arr[1] == numberOfMolecules[1] && arr[2] == numberOfMolecules[2] && arr[3] == numberOfMolecules[3]) {
 				newBall = true;	
 				ballExistence = false;
 				rotateToPosition(4);
