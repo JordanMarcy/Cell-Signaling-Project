@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Random;
 
 import javax.imageio.ImageIO;
@@ -24,31 +25,11 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	public Graphics bufferGraphics;
 	
 	public Image offscreen;	
-	
+	private HashMap<String, BufferedImage> imageMap = new HashMap<String, BufferedImage>();
 	private BufferedImage finalSprites;
 	private BufferedImage[] cannons = new BufferedImage[4];
 	private BufferedImage[] balls = new BufferedImage[5];
-	
-	
-	private BufferedImage centerMolecule;
-	private BufferedImage shooterImg, progressBar, background, greyBorder, pauseButton, pauseButtonPressed;
-	private BufferedImage blueArrow, blueInhibitor, greenArrow, 
-						  greenInhibitor, orangeArrow, orangeInhibitor, 
-						  redArrow, redInhibitor, highArrow, lowArrow, 
-						  lowInhibitor;
-	private BufferedImage cell2cell, cell2cellpressed, cellcycle, cellcyclepressed, 
-	  					  chooseown, chooseownpressed, menu, menupressed, missionBackground,
-	  					  tutorial, tutorialpressed;
-	private BufferedImage apcoli, adaptorProteins, apoptosis, bax, 
-						  betacatenin, caspase, cytc, dnadamage, 
-						  dnareplication, delta, frizzled, 
-						  genetranscription, gli, hedgehog, lrp, 
-						  mapkinaserelay, nodal, notch, orc, patched, 
-						  ras, rasactprotein, rtks, rb, replicationproteins, 
-						  smads, scdkscyclin, sckd, smo, tgfbeta, wnt, cdc6, 
-						  mitogen, p21, p53, apc, anaphase, 
-						  cohesin, mcdk, mcyclin, separase, securins; 
-	
+		
 	private StartingArrow strandOne, strandTwo, strandThree, strandFour;	
 	private Shooter shooter;
 	private CurrentBall currentBall;
@@ -62,7 +43,7 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	private int arr1 = 0, arr2 = 0, arr3 = 0, arr4 = 0;
 	private int numberOfMoleculesOne = 0, numberOfMoleculesTwo = 0, numberOfMoleculesThree = 0, numberOfMoleculesFour = 0;
 	
-	private BufferedImage centerTitle = apc;
+	private BufferedImage centerTitle;
 	private ArrayList<CurrentBall> listOne = new ArrayList<CurrentBall>();
 	private ArrayList<CurrentBall> listTwo = new ArrayList<CurrentBall>();
 	private ArrayList<CurrentBall> listThree = new ArrayList<CurrentBall>();
@@ -118,7 +99,7 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		inPlayOne.clear(); inPlayTwo.clear(); inPlayThree.clear(); inPlayFour.clear();
 		score = 0;
 		progress = 0;
-		listFive.add(new CurrentBall(5, balls[4], apcoli, null, null, false, false));
+		listFive.add(new CurrentBall(5, balls[4], imageMap.get("apcoli"), null, null, false, false));
 		
 		switch(level) {
 		case 1: setUpLevelOne(); break;
@@ -137,22 +118,22 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		numberOfMoleculesThree = 4;
 		numberOfMoleculesFour = 0;
 						
-		centerTitle = apc;
+		centerTitle = imageMap.get("apc");
 		
-		strandOne = new StartingArrow(0, true, blueArrow, ArrowType.ACTIVATE);
-		strandTwo = new StartingArrow(1, false, greenInhibitor, ArrowType.INHIBIT);
-		strandThree = new StartingArrow(2, false, redInhibitor, ArrowType.INHIBIT);
+		strandOne = new StartingArrow(0, true,  imageMap.get("blueArrow"), ArrowType.ACTIVATE);
+		strandTwo = new StartingArrow(1, false,  imageMap.get("greenInhibitor"), ArrowType.INHIBIT);
+		strandThree = new StartingArrow(2, false,  imageMap.get("redInhibitor"), ArrowType.INHIBIT);
 		strandFour = null;
 
 		
-		listOne.add(new CurrentBall(0, balls[0], mcdk, null, null, false, false));
+		listOne.add(new CurrentBall(0, balls[0], imageMap.get("mcdk"), null, null, false, false));
 		
-		listTwo.add(new CurrentBall(1, balls[1], mcyclin, null, null, false, false));
+		listTwo.add(new CurrentBall(1, balls[1], imageMap.get("mcyclin"), null, null, false, false));
 		
-		listThree.add(new CurrentBall(2, balls[3], securins, ArrowType.INHIBIT, redInhibitor, false, true));
-		listThree.add(new CurrentBall(2, balls[3], separase, ArrowType.INHIBIT, redInhibitor, false, false));
-		listThree.add(new CurrentBall(2, balls[3], cohesin, ArrowType.INHIBIT, redInhibitor, false, true));
-		listThree.add(new CurrentBall(2, balls[3], anaphase, null, null, false, true));
+		listThree.add(new CurrentBall(2, balls[3], imageMap.get("securins"), ArrowType.INHIBIT,  imageMap.get("redInhibitor"), false, true));
+		listThree.add(new CurrentBall(2, balls[3], imageMap.get("separase"), ArrowType.INHIBIT,  imageMap.get("redInhibitor"), false, false));
+		listThree.add(new CurrentBall(2, balls[3], imageMap.get("cohesin"), ArrowType.INHIBIT,  imageMap.get("redInhibitor"), false, true));
+		listThree.add(new CurrentBall(2, balls[3], imageMap.get("anaphase"), null, null, false, true));
 
 	}
 	
@@ -162,31 +143,31 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		numberOfMoleculesThree = 1;
 		numberOfMoleculesFour = 0;
 		
-		strandOne = new StartingArrow(0, false, redArrow, ArrowType.ACTIVATE);
-		strandTwo = new StartingArrow(1, false, blueArrow, ArrowType.ACTIVATE);
-		strandThree = new StartingArrow(2, true, orangeArrow, ArrowType.ACTIVATE);;
+		strandOne = new StartingArrow(0, false,  imageMap.get("redArrow"), ArrowType.ACTIVATE);
+		strandTwo = new StartingArrow(1, false,  imageMap.get("blueArrow"), ArrowType.ACTIVATE);
+		strandThree = new StartingArrow(2, true,  imageMap.get("orangeArrow"), ArrowType.ACTIVATE);;
 		strandFour = null;
 		
 		score = 0;
 		progress = 0;
-		centerTitle = p53;
+		centerTitle = imageMap.get("p53");
 		
 		arr1 = 0; arr2 = 0; arr3 = 0; arr4 = 0;
 		
 		listOne.clear(); listTwo.clear(); listThree.clear(); listFour.clear();
 		inPlayOne.clear(); inPlayTwo.clear(); inPlayThree.clear(); inPlayFour.clear(); 
 	
-		listOne.add(new CurrentBall(0, balls[3], bax, ArrowType.ACTIVATE, redArrow, false, true));
-		listOne.add(new CurrentBall(0, balls[3], cytc, ArrowType.ACTIVATE, redArrow, false, true));
-		listOne.add(new CurrentBall(0, balls[3], adaptorProteins, ArrowType.ACTIVATE, redArrow, false, true));
-		listOne.add(new CurrentBall(0, balls[3], caspase, ArrowType.ACTIVATE, redArrow, false, false));
-		listOne.add(new CurrentBall(0, balls[3], apoptosis, null, null, false, false));
+		listOne.add(new CurrentBall(0, balls[3],  imageMap.get("bax"), ArrowType.ACTIVATE,  imageMap.get("redArrow"), false, true));
+		listOne.add(new CurrentBall(0, balls[3],  imageMap.get("cytc"), ArrowType.ACTIVATE,  imageMap.get("redArrow"), false, true));
+		listOne.add(new CurrentBall(0, balls[3], imageMap.get("adaptorProteins"), ArrowType.ACTIVATE,  imageMap.get("redArrow"), false, true));
+		listOne.add(new CurrentBall(0, balls[3], imageMap.get("caspase"), ArrowType.ACTIVATE,  imageMap.get("redArrow"), false, false));
+		listOne.add(new CurrentBall(0, balls[3], imageMap.get("apoptosis"), null, null, false, false));
 		
-		listTwo.add(new CurrentBall(1, balls[0], p21, ArrowType.INHIBIT, blueInhibitor, false, true));
-		listTwo.add(new CurrentBall(1, balls[0], scdkscyclin, ArrowType.ACTIVATE, blueArrow, false, true));
-		listTwo.add(new CurrentBall(1, balls[0], dnareplication, null, null, false, true));
+		listTwo.add(new CurrentBall(1, balls[0], imageMap.get("p21"), ArrowType.INHIBIT,  imageMap.get("blueInhibitor"), false, true));
+		listTwo.add(new CurrentBall(1, balls[0], imageMap.get("scdkscyclin"), ArrowType.ACTIVATE,  imageMap.get("blueArrow"), false, true));
+		listTwo.add(new CurrentBall(1, balls[0], imageMap.get("dnareplication"), null, null, false, true));
 
-		listThree.add(new CurrentBall(2, balls[2], dnadamage, null, null, false, false));
+		listThree.add(new CurrentBall(2, balls[2], imageMap.get("dnadamage"), null, null, false, false));
 	}
 	
 	private void setUpLevelThree() {
@@ -195,37 +176,37 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		numberOfMoleculesThree = 3;
 		numberOfMoleculesFour = 3;
 		
-		strandOne = new StartingArrow(0, true, greenArrow, ArrowType.ACTIVATE);
-		strandTwo = new StartingArrow(1, true, redArrow, ArrowType.INHIBIT);
-		strandThree = new StartingArrow(2, false, orangeInhibitor, ArrowType.INHIBIT);
-		strandFour = new StartingArrow(3, false, blueInhibitor, ArrowType.INHIBIT);
+		strandOne = new StartingArrow(0, true,  imageMap.get("greenArrow"), ArrowType.ACTIVATE);
+		strandTwo = new StartingArrow(1, true,  imageMap.get("redArrow"), ArrowType.INHIBIT);
+		strandThree = new StartingArrow(2, false,  imageMap.get("orangeInhibitor"), ArrowType.INHIBIT);
+		strandFour = new StartingArrow(3, false,  imageMap.get("blueInhibitor"), ArrowType.INHIBIT);
 		
 		score = 0;
 		progress = 0;
-		centerTitle = sckd;
+		centerTitle = imageMap.get("sckd");
 		
 		arr1 = 0; arr2 = 0; arr3 = 0; arr4 = 0;
 
 		listOne.clear(); listTwo.clear(); listThree.clear(); listFour.clear();
 		inPlayOne.clear(); inPlayTwo.clear(); inPlayThree.clear(); inPlayFour.clear();
 		
-		listOne.add(new CurrentBall(0, balls[1], mapkinaserelay,  ArrowType.ACTIVATE, greenArrow, true, true));
-		listOne.add(new CurrentBall(0, balls[1], ras, ArrowType.ACTIVATE, greenArrow, true, true));
-		listOne.add(new CurrentBall(0, balls[1], rasactprotein, ArrowType.ACTIVATE, greenArrow, true, true));
-		listOne.add(new CurrentBall(0, balls[1], rtks, ArrowType.ACTIVATE, greenArrow, true, false));
-		listOne.add(new CurrentBall(0, balls[1], mitogen, null, null, false, false));
+		listOne.add(new CurrentBall(0, balls[1], imageMap.get("mapkinaserelay"),  ArrowType.ACTIVATE,  imageMap.get("greenArrow"), true, true));
+		listOne.add(new CurrentBall(0, balls[1], imageMap.get("ras"), ArrowType.ACTIVATE,  imageMap.get("greenArrow"), true, true));
+		listOne.add(new CurrentBall(0, balls[1], imageMap.get("rasactprotein"), ArrowType.ACTIVATE,  imageMap.get("greenArrow"), true, true));
+		listOne.add(new CurrentBall(0, balls[1], imageMap.get("rtks"), ArrowType.ACTIVATE,  imageMap.get("greenArrow"), true, false));
+		listOne.add(new CurrentBall(0, balls[1], imageMap.get("mitogen"), null, null, false, false));
 		
-		listTwo.add(new CurrentBall(1, balls[3], p21,  ArrowType.ACTIVATE, redArrow, true, true));
-		listTwo.add(new CurrentBall(1, balls[3], p53,  ArrowType.ACTIVATE, redArrow, true, false));
-		listTwo.add(new CurrentBall(1, balls[3], dnadamage,  null, null, false, false));
+		listTwo.add(new CurrentBall(1, balls[3], imageMap.get("p21"),  ArrowType.ACTIVATE,imageMap.get("redArrow"), true, true));
+		listTwo.add(new CurrentBall(1, balls[3], imageMap.get("p53"),  ArrowType.ACTIVATE,imageMap.get("redArrow"), true, false));
+		listTwo.add(new CurrentBall(1, balls[3], imageMap.get("dnadamage"),  null, null, false, false));
 
-		listThree.add(new CurrentBall(2, balls[2], rb, ArrowType.INHIBIT, orangeInhibitor, false, true));
-		listThree.add(new CurrentBall(2, balls[2], replicationproteins, ArrowType.ACTIVATE, orangeArrow, false, false));
-		listThree.add(new CurrentBall(2, balls[2], dnareplication, null, null, false, false));
+		listThree.add(new CurrentBall(2, balls[2], imageMap.get("rb"), ArrowType.INHIBIT,imageMap.get("orangeInhibitor"), false, true));
+		listThree.add(new CurrentBall(2, balls[2], imageMap.get("replicationproteins"), ArrowType.ACTIVATE, imageMap.get("orangeArrow"), false, false));
+		listThree.add(new CurrentBall(2, balls[2], imageMap.get("dnareplication"), null, null, false, false));
 
-		listFour.add(new CurrentBall(3, balls[0], cdc6, ArrowType.INHIBIT, blueInhibitor, false, true));
-		listFour.add(new CurrentBall(3, balls[0], orc, ArrowType.ACTIVATE, blueArrow, false, false));	
-		listFour.add(new CurrentBall(3, balls[0], dnareplication, null, null, false, false));	
+		listFour.add(new CurrentBall(3, balls[0], imageMap.get("cdc6"), ArrowType.INHIBIT,imageMap.get("blueInhibitor"), false, true));
+		listFour.add(new CurrentBall(3, balls[0], imageMap.get("orc"), ArrowType.ACTIVATE,imageMap.get("blueArrow"), false, false));	
+		listFour.add(new CurrentBall(3, balls[0], imageMap.get("dnareplication"), null, null, false, false));	
 
 	}
 	
@@ -235,13 +216,13 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		numberOfMoleculesTwo = 0;
 		numberOfMoleculesThree = 1;
 		numberOfMoleculesFour = 0;
-		centerTitle = notch;
-		strandOne = new StartingArrow(0, false, greenArrow, ArrowType.ACTIVATE);
+		centerTitle = imageMap.get("notch");
+		strandOne = new StartingArrow(0, false, imageMap.get("greenArrow"), ArrowType.ACTIVATE);
 		strandTwo = null;
-		strandThree = new StartingArrow(2, true, orangeArrow, ArrowType.ACTIVATE);
+		strandThree = new StartingArrow(2, true, imageMap.get("orangeArrow"), ArrowType.ACTIVATE);
 		strandFour = null;	
-		listOne.add(new CurrentBall(0, balls[1], genetranscription,  null, null, false, true));
-		listThree.add(new CurrentBall(2, balls[2], delta, null, null, false, false));
+		listOne.add(new CurrentBall(0, balls[1], imageMap.get("genetranscription"),  null, null, false, true));
+		listThree.add(new CurrentBall(2, balls[2], imageMap.get("delta"), null, null, false, false));
 		
 		score = 0;
 		progress = 0;
@@ -252,21 +233,21 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		if (placeHolder == 0){
 			numberOfMoleculesOne = 2;
 			numberOfMoleculesThree = 1;
-			centerTitle = tgfbeta;
-			strandOne = new StartingArrow(0, false, orangeArrow, ArrowType.ACTIVATE);
-			strandThree = new StartingArrow(2, true, redArrow, ArrowType.ACTIVATE);
-			listThree.add(new CurrentBall(2, balls[3], nodal,  null, null, true, false));
-			listOne.add(new CurrentBall(0, balls[2], smads, ArrowType.ACTIVATE, redArrow, false, true));
-			listOne.add(new CurrentBall(0, balls[2], genetranscription, null, null, false, false));
+			centerTitle = imageMap.get("tgfbeta");
+			strandOne = new StartingArrow(0, false, imageMap.get("orangeArrow"), ArrowType.ACTIVATE);
+			strandThree = new StartingArrow(2, true,imageMap.get("redArrow"), ArrowType.ACTIVATE);
+			listThree.add(new CurrentBall(2, balls[3], imageMap.get("nodal"),  null, null, true, false));
+			listOne.add(new CurrentBall(0, balls[2], imageMap.get("smads"), ArrowType.ACTIVATE,imageMap.get("redArrow"), false, true));
+			listOne.add(new CurrentBall(0, balls[2], imageMap.get("genetranscription"), null, null, false, false));
 		} else if (placeHolder == 1) {
 			numberOfMoleculesOne = 1;
 			numberOfMoleculesThree = 2;
-			centerTitle = smads;
-			strandOne = new StartingArrow(0, false, orangeArrow, ArrowType.ACTIVATE);
-			strandThree = new StartingArrow(2, true, redArrow, ArrowType.ACTIVATE);
-			listThree.add(new CurrentBall(2, balls[3], tgfbeta, ArrowType.ACTIVATE, redArrow, true, false));
-			listThree.add(new CurrentBall(2, balls[3], nodal,  null, null, true, true));
-			listOne.add(new CurrentBall(0, balls[2], genetranscription, ArrowType.ACTIVATE, orangeArrow, false, false));
+			centerTitle = imageMap.get("smads");
+			strandOne = new StartingArrow(0, false, imageMap.get("orangeArrow"), ArrowType.ACTIVATE);
+			strandThree = new StartingArrow(2, true,imageMap.get("redArrow"), ArrowType.ACTIVATE);
+			listThree.add(new CurrentBall(2, balls[3], imageMap.get("tgfbeta"), ArrowType.ACTIVATE,imageMap.get("redArrow"), true, false));
+			listThree.add(new CurrentBall(2, balls[3], imageMap.get("nodal"),  null, null, true, true));
+			listOne.add(new CurrentBall(0, balls[2], imageMap.get("genetranscription"), ArrowType.ACTIVATE, imageMap.get("orangeArrow"), false, false));
 		}
 		
 		numberOfMoleculesTwo = 0;
@@ -283,33 +264,33 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		if (placeHolder == 0){
 			numberOfMoleculesOne = 3;
 			numberOfMoleculesThree = 1;
-			centerTitle = patched;
-			strandOne = new StartingArrow(0, false, redInhibitor, ArrowType.INHIBIT);
-			strandThree = new StartingArrow(2, true, blueInhibitor, ArrowType.INHIBIT);
-			listThree.add(new CurrentBall(2, balls[0], hedgehog,  null, null, true, true));
-			listOne.add(new CurrentBall(0, balls[3], smo, ArrowType.ACTIVATE, redArrow, false, false));
-			listOne.add(new CurrentBall(0, balls[3], gli, ArrowType.ACTIVATE, redArrow, false, false));
-			listOne.add(new CurrentBall(0, balls[3], genetranscription, ArrowType.ACTIVATE, redArrow, false, false));
+			centerTitle = imageMap.get("patched");
+			strandOne = new StartingArrow(0, false, imageMap.get("redInhibitor"), ArrowType.INHIBIT);
+			strandThree = new StartingArrow(2, true,imageMap.get("blueInhibitor"), ArrowType.INHIBIT);
+			listThree.add(new CurrentBall(2, balls[0], imageMap.get("hedgehog"),  null, null, true, true));
+			listOne.add(new CurrentBall(0, balls[3], imageMap.get("smo"), ArrowType.ACTIVATE,imageMap.get("redArrow"), false, false));
+			listOne.add(new CurrentBall(0, balls[3], imageMap.get("gli"), ArrowType.ACTIVATE,imageMap.get("redArrow"), false, false));
+			listOne.add(new CurrentBall(0, balls[3], imageMap.get("genetranscription"), ArrowType.ACTIVATE,imageMap.get("redArrow"), false, false));
 		} else if (placeHolder == 1) {
 			numberOfMoleculesOne = 2;
 			numberOfMoleculesThree = 2;
-			centerTitle = smo;
-			strandOne = new StartingArrow(0, false, redArrow, ArrowType.ACTIVATE);
-			strandThree = new StartingArrow(2, true, blueInhibitor, ArrowType.INHIBIT);
-			listThree.add(new CurrentBall(2, balls[0], patched,  ArrowType.INHIBIT, blueInhibitor, true, true));
-			listThree.add(new CurrentBall(2, balls[0], hedgehog, null, null, false, false));
-			listOne.add(new CurrentBall(0, balls[3], gli, ArrowType.ACTIVATE, redArrow, false, false));
-			listOne.add(new CurrentBall(0, balls[3], genetranscription, ArrowType.ACTIVATE, redArrow, false, false));
+			centerTitle = imageMap.get("smo");
+			strandOne = new StartingArrow(0, false,imageMap.get("redArrow"), ArrowType.ACTIVATE);
+			strandThree = new StartingArrow(2, true,imageMap.get("blueInhibitor"), ArrowType.INHIBIT);
+			listThree.add(new CurrentBall(2, balls[0], imageMap.get("patched"),  ArrowType.INHIBIT,imageMap.get("blueInhibitor"), true, true));
+			listThree.add(new CurrentBall(2, balls[0], imageMap.get("hedgehog"), null, null, false, false));
+			listOne.add(new CurrentBall(0, balls[3], imageMap.get("gli"), ArrowType.ACTIVATE,imageMap.get("redArrow"), false, false));
+			listOne.add(new CurrentBall(0, balls[3], imageMap.get("genetranscription"), ArrowType.ACTIVATE,imageMap.get("redArrow"), false, false));
 		} else if (placeHolder == 2) {
 			numberOfMoleculesOne = 1;
 			numberOfMoleculesThree = 3;
-			centerTitle = gli;
-			strandOne = new StartingArrow(0, false, redArrow, ArrowType.ACTIVATE);
-			strandThree = new StartingArrow(2, true, blueArrow, ArrowType.ACTIVATE);
-			listThree.add(new CurrentBall(2, balls[0], smo,  ArrowType.INHIBIT, blueInhibitor, true, true));
-			listThree.add(new CurrentBall(2, balls[0], patched, ArrowType.INHIBIT, blueInhibitor, true, false));
-			listThree.add(new CurrentBall(2, balls[0], hedgehog, null, null, true, false));
-			listOne.add(new CurrentBall(0, balls[3], genetranscription, ArrowType.ACTIVATE, redArrow, false, false));
+			centerTitle = imageMap.get("gli");
+			strandOne = new StartingArrow(0, false,imageMap.get("redArrow"), ArrowType.ACTIVATE);
+			strandThree = new StartingArrow(2, true,imageMap.get("blueArrow"), ArrowType.ACTIVATE);
+			listThree.add(new CurrentBall(2, balls[0], imageMap.get("smo"),  ArrowType.INHIBIT,imageMap.get("blueInhibitor"), true, true));
+			listThree.add(new CurrentBall(2, balls[0], imageMap.get("patched"), ArrowType.INHIBIT, imageMap.get("blueInhibitor"), true, false));
+			listThree.add(new CurrentBall(2, balls[0], imageMap.get("hedgehog"), null, null, true, false));
+			listOne.add(new CurrentBall(0, balls[3], imageMap.get("genetranscription"), ArrowType.ACTIVATE,imageMap.get("redArrow"), false, false));
 		}
 		
 		numberOfMoleculesTwo = 0;
@@ -326,47 +307,47 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		if (placeHolder == 0){
 			numberOfMoleculesOne = 4;
 			numberOfMoleculesThree = 1;
-			centerTitle = frizzled;
-			strandOne = new StartingArrow(0, false, blueArrow, ArrowType.ACTIVATE);
-			strandThree = new StartingArrow(2, true, greenArrow, ArrowType.ACTIVATE);
-			listThree.add(new CurrentBall(2, balls[1], wnt,  null, null, true, true));
-			listOne.add(new CurrentBall(0, balls[0], lrp, ArrowType.INHIBIT, blueInhibitor, false, false));
-			listOne.add(new CurrentBall(0, balls[0], apc, ArrowType.INHIBIT, blueInhibitor, false, false));
-			listOne.add(new CurrentBall(0, balls[0], betacatenin, ArrowType.ACTIVATE, blueArrow, false, false));
-			listOne.add(new CurrentBall(0, balls[0], genetranscription, null, null, false, false));
+			centerTitle = imageMap.get("frizzled");
+			strandOne = new StartingArrow(0, false,imageMap.get("blueArrow"), ArrowType.ACTIVATE);
+			strandThree = new StartingArrow(2, true, imageMap.get("greenArrow"), ArrowType.ACTIVATE);
+			listThree.add(new CurrentBall(2, balls[1], imageMap.get("wnt"),  null, null, true, true));
+			listOne.add(new CurrentBall(0, balls[0], imageMap.get("lrp"), ArrowType.INHIBIT, imageMap.get("blueInhibitor"), false, false));
+			listOne.add(new CurrentBall(0, balls[0], imageMap.get("apc"), ArrowType.INHIBIT, imageMap.get("blueInhibitor"), false, false));
+			listOne.add(new CurrentBall(0, balls[0],  imageMap.get("betacatenin"), ArrowType.ACTIVATE,imageMap.get("blueArrow"), false, false));
+			listOne.add(new CurrentBall(0, balls[0], imageMap.get("genetranscription"), null, null, false, false));
 		} else if (placeHolder == 1) {
 			numberOfMoleculesOne = 3;
 			numberOfMoleculesThree = 2;
-			centerTitle = lrp;
-			strandOne = new StartingArrow(0, false, blueInhibitor, ArrowType.INHIBIT);
-			strandThree = new StartingArrow(2, true, greenArrow, ArrowType.ACTIVATE);
-			listThree.add(new CurrentBall(2, balls[1], frizzled,  ArrowType.ACTIVATE, greenArrow, true, true));
-			listThree.add(new CurrentBall(2, balls[1], wnt, null, null, true, false));
-			listOne.add(new CurrentBall(0, balls[0], apc, ArrowType.INHIBIT, blueInhibitor, false, false));
-			listOne.add(new CurrentBall(0, balls[0], betacatenin, ArrowType.ACTIVATE, blueArrow, false, false));
-			listOne.add(new CurrentBall(0, balls[0], genetranscription, null, null, false, false));
+			centerTitle = imageMap.get("lrp");
+			strandOne = new StartingArrow(0, false, imageMap.get("blueInhibitor"), ArrowType.INHIBIT);
+			strandThree = new StartingArrow(2, true, imageMap.get("greenArrow"), ArrowType.ACTIVATE);
+			listThree.add(new CurrentBall(2, balls[1], imageMap.get("frizzled"),  ArrowType.ACTIVATE, imageMap.get("greenArrow"), true, true));
+			listThree.add(new CurrentBall(2, balls[1], imageMap.get("wnt"), null, null, true, false));
+			listOne.add(new CurrentBall(0, balls[0], imageMap.get("apc"), ArrowType.INHIBIT, imageMap.get("blueInhibitor"), false, false));
+			listOne.add(new CurrentBall(0, balls[0],  imageMap.get("betacatenin"), ArrowType.ACTIVATE,imageMap.get("blueArrow"), false, false));
+			listOne.add(new CurrentBall(0, balls[0], imageMap.get("genetranscription"), null, null, false, false));
 		} else if (placeHolder == 2) {
 			numberOfMoleculesOne = 2;
 			numberOfMoleculesThree = 3;
-			centerTitle = apc;
-			strandOne = new StartingArrow(0, false, blueInhibitor, ArrowType.INHIBIT);
-			strandThree = new StartingArrow(2, true, greenInhibitor, ArrowType.INHIBIT);
-			listThree.add(new CurrentBall(2, balls[1], lrp,  ArrowType.ACTIVATE, greenArrow, true, true));
-			listThree.add(new CurrentBall(2, balls[1], frizzled, ArrowType.ACTIVATE, greenArrow, true, false));
-			listThree.add(new CurrentBall(2, balls[1], wnt, null, null, true, false));
-			listOne.add(new CurrentBall(0, balls[0], betacatenin, ArrowType.ACTIVATE, blueArrow, false, false));
-			listOne.add(new CurrentBall(0, balls[0], genetranscription, null, null, false, false));
+			centerTitle = imageMap.get("apc");
+			strandOne = new StartingArrow(0, false, imageMap.get("blueInhibitor"), ArrowType.INHIBIT);
+			strandThree = new StartingArrow(2, true, imageMap.get("greenInhibitor"), ArrowType.INHIBIT);
+			listThree.add(new CurrentBall(2, balls[1], imageMap.get("lrp"),  ArrowType.ACTIVATE, imageMap.get("greenArrow"), true, true));
+			listThree.add(new CurrentBall(2, balls[1], imageMap.get("frizzled"), ArrowType.ACTIVATE, imageMap.get("greenArrow"), true, false));
+			listThree.add(new CurrentBall(2, balls[1], imageMap.get("wnt"), null, null, true, false));
+			listOne.add(new CurrentBall(0, balls[0],  imageMap.get("betacatenin"), ArrowType.ACTIVATE,imageMap.get("blueArrow"), false, false));
+			listOne.add(new CurrentBall(0, balls[0], imageMap.get("genetranscription"), null, null, false, false));
 		} else if (placeHolder == 3) {
 			numberOfMoleculesOne = 1;
 			numberOfMoleculesThree = 4;
-			centerTitle = betacatenin;
-			strandOne = new StartingArrow(0, false, blueArrow, ArrowType.ACTIVATE);
-			strandThree = new StartingArrow(2, true, greenInhibitor, ArrowType.INHIBIT);
-			listThree.add(new CurrentBall(2, balls[1], apc,  ArrowType.INHIBIT, greenInhibitor, true, true));
-			listThree.add(new CurrentBall(2, balls[1], lrp,  ArrowType.ACTIVATE, greenArrow, true, true));
-			listThree.add(new CurrentBall(2, balls[1], frizzled,  ArrowType.ACTIVATE, greenArrow, true, true));
-			listThree.add(new CurrentBall(2, balls[1], wnt,  ArrowType.ACTIVATE, greenArrow, true, true));
-			listOne.add(new CurrentBall(2, balls[0], genetranscription, null, null, false, true));
+			centerTitle =  imageMap.get("betacatenin");
+			strandOne = new StartingArrow(0, false,imageMap.get("blueArrow"), ArrowType.ACTIVATE);
+			strandThree = new StartingArrow(2, true, imageMap.get("greenInhibitor"), ArrowType.INHIBIT);
+			listThree.add(new CurrentBall(2, balls[1], imageMap.get("apc"),  ArrowType.INHIBIT, imageMap.get("greenInhibitor"), true, true));
+			listThree.add(new CurrentBall(2, balls[1], imageMap.get("lrp"),  ArrowType.ACTIVATE, imageMap.get("greenArrow"), true, true));
+			listThree.add(new CurrentBall(2, balls[1], imageMap.get("frizzled"),  ArrowType.ACTIVATE, imageMap.get("greenArrow"), true, true));
+			listThree.add(new CurrentBall(2, balls[1], imageMap.get("wnt"),  ArrowType.ACTIVATE, imageMap.get("greenArrow"), true, true));
+			listOne.add(new CurrentBall(2, balls[0], imageMap.get("genetranscription"), null, null, false, true));
 		}
 		
 		numberOfMoleculesTwo = 0;
@@ -382,17 +363,17 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		URL url = new URL(getCodeBase(), "CannonGameSpriteSheet.png");
 		finalSprites = ImageIO.read(url);
 		
-		blueArrow = finalSprites.getSubimage(23, 0, 16, 16);
-		blueInhibitor = finalSprites.getSubimage(1024, 0, 19, 18);
-		greenArrow = finalSprites.getSubimage(39, 0, 16, 16);
-		greenInhibitor = finalSprites.getSubimage(1043, 0, 19, 18);
-		redArrow = finalSprites.getSubimage(115, 0, 16, 16);
-		redInhibitor = finalSprites.getSubimage(1102, 0, 19, 19);
-		orangeArrow = finalSprites.getSubimage(99, 0, 16, 16);
-		orangeInhibitor = finalSprites.getSubimage(1083, 0, 19, 18);
-		highArrow = finalSprites.getSubimage(55, 0, 22, 23);
-		lowArrow = finalSprites.getSubimage(77, 0, 22, 23);
-		lowInhibitor = finalSprites.getSubimage(1062, 0, 21, 22);
+		imageMap.put("blueArrow", finalSprites.getSubimage(23, 0, 16, 16));
+		imageMap.put("blueInhibitor", finalSprites.getSubimage(1024, 0, 19, 18));
+		imageMap.put("greenArrow", finalSprites.getSubimage(39, 0, 16, 16));
+		imageMap.put("greenInhibitor", finalSprites.getSubimage(1043, 0, 19, 18));
+		imageMap.put("redArrow", finalSprites.getSubimage(115, 0, 16, 16));
+		imageMap.put("redInhibitor", finalSprites.getSubimage(1102, 0, 19, 19));
+		imageMap.put("orangeArrow", finalSprites.getSubimage(99, 0, 16, 16));
+		imageMap.put("orangeInhibitor", finalSprites.getSubimage(1083, 0, 19, 18));
+		imageMap.put("highArrow", finalSprites.getSubimage(55, 0, 22, 23));
+		imageMap.put("lowArrow", finalSprites.getSubimage(77, 0, 22, 23));
+		imageMap.put("lowInhibitor", finalSprites.getSubimage(1062, 0, 21, 22));
 		
 		for (int i = 0; i < 3; i++) {
 			balls[i] = finalSprites.getSubimage(2486 + 48*i, 0, 48, 48);
@@ -403,56 +384,56 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 			cannons[i] = finalSprites.getSubimage(268 + 84*i, 0, 84, 84);
 		}
 		
-		apcoli = finalSprites.getSubimage(0, 0, 23, 42);
-		adaptorProteins = finalSprites.getSubimage(131, 0, 37, 31);
-		apoptosis = finalSprites.getSubimage(168, 0, 40, 20);
-		bax = finalSprites.getSubimage(208, 0, 27, 21);
-		betacatenin = finalSprites.getSubimage(235, 0, 33, 29);
-		caspase = finalSprites.getSubimage(604, 0, 39, 21);
-		cytc = finalSprites.getSubimage(720, 0, 28, 37);
-		dnadamage = finalSprites.getSubimage(748, 0, 31, 32);
-		dnareplication = finalSprites.getSubimage(779, 0, 39, 32);
-		delta = finalSprites.getSubimage(818, 0, 33, 18);
-		frizzled = finalSprites.getSubimage(898, 0, 35, 16);
-		genetranscription = finalSprites.getSubimage(933, 0, 39, 29);
-		gli = finalSprites.getSubimage(972, 0, 19, 25);
-		hedgehog = finalSprites.getSubimage(991, 0, 33, 37);
-		lrp = finalSprites.getSubimage(1121, 0, 31, 25);
-		mapkinaserelay = finalSprites.getSubimage(1152, 0, 34, 39);
-		nodal = finalSprites.getSubimage(1186, 0, 37, 19);
-		notch = finalSprites.getSubimage(1223, 0, 35, 19);
-		orc = finalSprites.getSubimage(1258, 0, 34, 21);
-		patched = finalSprites.getSubimage(1292, 0, 38, 16);
-		ras = finalSprites.getSubimage(1330, 0, 30, 21);
-		rasactprotein = finalSprites.getSubimage(1360, 0, 38, 39);
-		rtks = finalSprites.getSubimage(1398, 0, 35, 18);
-		rb = finalSprites.getSubimage(1433, 0, 20, 21);
-		replicationproteins = finalSprites.getSubimage(1453, 0, 40, 28);
-		smads = finalSprites.getSubimage(1493, 0, 38, 18);
-		scdkscyclin = finalSprites.getSubimage(1531, 0, 43, 30);
-		sckd = finalSprites.getSubimage(1574, 0, 36, 17);
-		smo = finalSprites.getSubimage(1610, 0, 32, 25);
-		tgfbeta = finalSprites.getSubimage(1642, 0, 37, 29);
-		wnt = finalSprites.getSubimage(1679, 0, 31, 21);
-		cdc6 = finalSprites.getSubimage(2410, 0, 36, 18);
-		mitogen = finalSprites.getSubimage(2446, 0, 40, 22);
-		p21 = finalSprites.getSubimage(2677, 0, 22, 30);
-		p53 = finalSprites.getSubimage(2699, 0, 27, 30);
-		apc = finalSprites.getSubimage(3671, 0, 35, 24);
-		anaphase = finalSprites.getSubimage(3706, 0, 31, 29);
-		cohesin = finalSprites.getSubimage(3737, 0, 39, 15);
-		mcdk = finalSprites.getSubimage(3776, 0, 39, 17);
-		mcyclin = finalSprites.getSubimage(3815, 0, 30, 38);
-		separase = finalSprites.getSubimage(3845, 0, 34, 29);
-		securins = finalSprites.getSubimage(3879, 0, 38, 16);
+		imageMap.put("apcoli", finalSprites.getSubimage(0, 0, 23, 42));
+		imageMap.put("adaptorProteins", finalSprites.getSubimage(131, 0, 37, 31));
+		imageMap.put("apoptosis", finalSprites.getSubimage(168, 0, 40, 20));
+		imageMap.put("bax", finalSprites.getSubimage(208, 0, 27, 21));
+		imageMap.put("betacatenin", finalSprites.getSubimage(235, 0, 33, 29));
+		imageMap.put("caspase", finalSprites.getSubimage(604, 0, 39, 21));
+		imageMap.put("cytc", finalSprites.getSubimage(720, 0, 28, 37));
+		imageMap.put("dnadamage", finalSprites.getSubimage(748, 0, 31, 32));
+		imageMap.put("dnareplication", finalSprites.getSubimage(779, 0, 39, 32));
+		imageMap.put("delta", finalSprites.getSubimage(818, 0, 33, 18));
+		imageMap.put("frizzled", finalSprites.getSubimage(898, 0, 35, 16));
+		imageMap.put("genetranscription", finalSprites.getSubimage(933, 0, 39, 29));
+		imageMap.put("gli", finalSprites.getSubimage(972, 0, 19, 25));
+		imageMap.put("hedgehog", finalSprites.getSubimage(991, 0, 33, 37));
+		imageMap.put("lrp", finalSprites.getSubimage(1121, 0, 31, 25));
+		imageMap.put("mapkinaserelay", finalSprites.getSubimage(1152, 0, 34, 39));
+		imageMap.put("nodal", finalSprites.getSubimage(1186, 0, 37, 19));
+		imageMap.put("notch", finalSprites.getSubimage(1223, 0, 35, 19));
+		imageMap.put("orc", finalSprites.getSubimage(1258, 0, 34, 21));
+		imageMap.put("patched", finalSprites.getSubimage(1292, 0, 38, 16));
+		imageMap.put("ras", finalSprites.getSubimage(1330, 0, 30, 21));
+		imageMap.put("rasactprotein", finalSprites.getSubimage(1360, 0, 38, 39));
+		imageMap.put("rtks", finalSprites.getSubimage(1398, 0, 35, 18));
+		imageMap.put("rb", finalSprites.getSubimage(1433, 0, 20, 21));
+		imageMap.put("replicationproteins", finalSprites.getSubimage(1453, 0, 40, 28));
+		imageMap.put("smads", finalSprites.getSubimage(1493, 0, 38, 18));
+		imageMap.put("scdkscyclin", finalSprites.getSubimage(1531, 0, 43, 30));
+		imageMap.put("sckd", finalSprites.getSubimage(1574, 0, 36, 17));
+		imageMap.put("smo", finalSprites.getSubimage(1610, 0, 32, 25));
+		imageMap.put("tgfbeta", finalSprites.getSubimage(1642, 0, 37, 29));
+		imageMap.put("wnt", finalSprites.getSubimage(1679, 0, 31, 21));
+		imageMap.put("cdc6", finalSprites.getSubimage(2410, 0, 36, 18));
+		imageMap.put("mitogen", finalSprites.getSubimage(2446, 0, 40, 22));
+		imageMap.put("p21", finalSprites.getSubimage(2677, 0, 22, 30));
+		imageMap.put("p53", finalSprites.getSubimage(2699, 0, 27, 30));
+		imageMap.put("apc", finalSprites.getSubimage(3671, 0, 35, 24));
+		imageMap.put("anaphase", finalSprites.getSubimage(3706, 0, 31, 29));
+		imageMap.put("cohesin", finalSprites.getSubimage(3737, 0, 39, 15));
+		imageMap.put("mcdk", finalSprites.getSubimage(3776, 0, 39, 17));
+		imageMap.put("mcyclin", finalSprites.getSubimage(3815, 0, 30, 38));
+		imageMap.put("separase", finalSprites.getSubimage(3845, 0, 34, 29));
+		imageMap.put("securins", finalSprites.getSubimage(3879, 0, 38, 16));
 		
-		centerMolecule = finalSprites.getSubimage(643, 0, 77, 79);	
-		shooterImg = finalSprites.getSubimage(851, 0, 47, 79);
-		progressBar = finalSprites.getSubimage(2902, 0, 69, 39);
-		background = finalSprites.getSubimage(1710, 0, 700, 600);
-		greyBorder = finalSprites.getSubimage(2971, 0, 700, 600);
-		pauseButton = finalSprites.getSubimage(2726, 0, 88, 42);
-		pauseButtonPressed = finalSprites.getSubimage(2814, 0, 88, 42);
+		imageMap.put("centerMolecule", finalSprites.getSubimage(643, 0, 77, 79));	
+		imageMap.put("shooterImg", finalSprites.getSubimage(851, 0, 47, 79));
+		imageMap.put("progressBar", finalSprites.getSubimage(2902, 0, 69, 39));
+		imageMap.put("background", finalSprites.getSubimage(1710, 0, 700, 600));
+		imageMap.put("greyBorder", finalSprites.getSubimage(2971, 0, 700, 600));
+		imageMap.put("pauseButton", finalSprites.getSubimage(2726, 0, 88, 42));
+		imageMap.put("pauseButtonPressed", finalSprites.getSubimage(2814, 0, 88, 42));
 		
 		
 		url = new URL(getCodeBase(), "simplificationImage_default.png");
@@ -471,57 +452,56 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		url = new URL(getCodeBase(), "interfacesprites_default.png");
 		BufferedImage interfaceSprites = ImageIO.read(url);
 		
-		cell2cell = interfaceSprites.getSubimage(0, 0, 311, 221);
-		cell2cellpressed = interfaceSprites.getSubimage(311, 0, 311, 221);
-		cellcycle = interfaceSprites.getSubimage(622, 0, 310, 220);
-		cellcyclepressed = interfaceSprites.getSubimage(932, 0, 310, 220);
-		chooseown = interfaceSprites.getSubimage(1242, 0, 470, 80);
-		chooseownpressed = interfaceSprites.getSubimage(1712, 0, 470, 80);
-		menu = interfaceSprites.getSubimage(2182, 0, 150, 81);
-		menupressed = interfaceSprites.getSubimage(2332, 0, 150, 81);
-		missionBackground = interfaceSprites.getSubimage(2482, 0, 700, 600);
-		tutorial = interfaceSprites.getSubimage(3182, 0, 150, 80);
-		tutorialpressed = interfaceSprites.getSubimage(3332, 0, 150, 80);
+		imageMap.put("cell2cell", interfaceSprites.getSubimage(0, 0, 311, 221));
+		imageMap.put("cell2cellpressed", interfaceSprites.getSubimage(311, 0, 311, 221));
+		imageMap.put("cellcycle", interfaceSprites.getSubimage(622, 0, 310, 220));
+		imageMap.put("cellcyclepressed", interfaceSprites.getSubimage(932, 0, 310, 220));
+		imageMap.put("chooseown", interfaceSprites.getSubimage(1242, 0, 470, 80));
+		imageMap.put("chooseownpressed", interfaceSprites.getSubimage(1712, 0, 470, 80));
+		imageMap.put("menu", interfaceSprites.getSubimage(2182, 0, 150, 81));
+		imageMap.put("menupressed", interfaceSprites.getSubimage(2332, 0, 150, 81));
+		imageMap.put("missionBackground", interfaceSprites.getSubimage(2482, 0, 700, 600));
+		imageMap.put("tutorial", interfaceSprites.getSubimage(3182, 0, 150, 80));
+		imageMap.put("tutorialpressed", interfaceSprites.getSubimage(3332, 0, 150, 80));
 		balls[4] = interfaceSprites.getSubimage(3482, 0, 48, 49);
 		
 		url = new URL(getCodeBase(), "moreInterface_default.png");
 		BufferedImage iSprites = ImageIO.read(url);
 		
-		APCButton = iSprites.getSubimage(0, 0, 210, 60);
-		backButton = iSprites.getSubimage(210, 0, 60, 60);
-		backPressed = iSprites.getSubimage(270, 0, 60, 60);
-		btpButton = iSprites.getSubimage(330, 0, 90, 50);
-		bluePause = iSprites.getSubimage(420, 0, 470, 290);
-		chooseBackground = iSprites.getSubimage(890, 0, 700, 600);
-		dnButton = iSprites.getSubimage(1590, 0, 210, 60);
-		hedgehogButton = iSprites.getSubimage(1800, 0, 210, 60);
-		helpButton = iSprites.getSubimage(2010, 0, 91, 50);
-		levelPressed = iSprites.getSubimage(2101, 0, 101, 100); 
-		pathwayPressed = iSprites.getSubimage(2202, 0, 210, 60);
-		playButton = iSprites.getSubimage(2412, 0, 90, 50);
-		playPressed = iSprites.getSubimage(2502, 0, 90, 50);
-		redPressed = iSprites.getSubimage(2592, 0, 90, 50);
-		redPause = iSprites.getSubimage(2682, 0, 470, 290);
-		restartButton  = iSprites.getSubimage(3152, 0, 91, 50);
-		scdkButton = iSprites.getSubimage(3243, 0, 210, 61);
-		smBackButton = iSprites.getSubimage(3453, 0, 60, 40);
-		smBackPressed = iSprites.getSubimage(3513, 0, 60, 40);
-		tgfButton = iSprites.getSubimage(3573, 0, 210, 61);
-		wntButton = iSprites.getSubimage(3783, 0, 210, 60);
-		lvl1 = iSprites.getSubimage(3993, 0, 101, 100);
-		lvl2 = iSprites.getSubimage(4094, 0, 101, 100);
-		lvl3 = iSprites.getSubimage(4195, 0, 101, 100);
-		p53button = iSprites.getSubimage(4296, 0, 210, 61);
+		imageMap.put("APCButton", iSprites.getSubimage(0, 0, 210, 60));
+		imageMap.put("backButton", iSprites.getSubimage(210, 0, 60, 60));
+		imageMap.put("backPressed", iSprites.getSubimage(270, 0, 60, 60));
+		imageMap.put("btpButton", iSprites.getSubimage(330, 0, 90, 50));
+		imageMap.put("bluePause", iSprites.getSubimage(420, 0, 470, 290));
+		imageMap.put("chooseBackground", iSprites.getSubimage(890, 0, 700, 600));
+		imageMap.put("dnButton", iSprites.getSubimage(1590, 0, 210, 60));
+		imageMap.put("hedgehogButton", iSprites.getSubimage(1800, 0, 210, 60));
+		imageMap.put("helpButton", iSprites.getSubimage(2010, 0, 91, 50));
+		imageMap.put("levelPressed", iSprites.getSubimage(2101, 0, 101, 100)); 
+		imageMap.put("pathwayPressed", iSprites.getSubimage(2202, 0, 210, 60));
+		imageMap.put("playButton", iSprites.getSubimage(2412, 0, 90, 50));
+		imageMap.put("playPressed", iSprites.getSubimage(2502, 0, 90, 50));
+		imageMap.put("redPressed", iSprites.getSubimage(2592, 0, 90, 50));
+		imageMap.put("redPause", iSprites.getSubimage(2682, 0, 470, 290));
+		imageMap.put("restartButton", iSprites.getSubimage(3152, 0, 91, 50));
+		imageMap.put("scdkButton", iSprites.getSubimage(3243, 0, 210, 61));
+		imageMap.put("smBackButton", iSprites.getSubimage(3453, 0, 60, 40));
+		imageMap.put("smBackPressed", iSprites.getSubimage(3513, 0, 60, 40));
+		imageMap.put("tgfButton", iSprites.getSubimage(3573, 0, 210, 61));
+		imageMap.put("wntButton", iSprites.getSubimage(3783, 0, 210, 60));
+		imageMap.put("lvl1", iSprites.getSubimage(3993, 0, 101, 100));
+		imageMap.put("lvl2", iSprites.getSubimage(4094, 0, 101, 100));
+		imageMap.put("lvl3", iSprites.getSubimage(4195, 0, 101, 100));
+		imageMap.put("p53button", iSprites.getSubimage(4296, 0, 210, 61));
 		
 		url = new URL(getCodeBase(), "tutorialSprites_default.png");
 		BufferedImage tutorialSprites = ImageIO.read(url);
 		
-		missionAccomplished = tutorialSprites.getSubimage(90, 0, 470, 290);
-		onwards = tutorialSprites.getSubimage(2273, 0, 90, 50);
-		replay = tutorialSprites.getSubimage(1358, 0, 91, 51);
+		imageMap.put("missionAccomplished", tutorialSprites.getSubimage(90, 0, 470, 290));
+		imageMap.put("onwards", tutorialSprites.getSubimage(2273, 0, 90, 50));
+		imageMap.put("replay", tutorialSprites.getSubimage(1358, 0, 91, 51));
 	}
 	
-	private BufferedImage missionAccomplished, onwards, replay;
 	
 	private ArrayList<Button> chooseYourOwnAdventureButtons = new ArrayList<Button>();
 	private ArrayList<Button> pathwayMissionButtons = new ArrayList<Button>();
@@ -530,62 +510,53 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	private ArrayList<Button> missionButtons = new ArrayList<Button>();
 
 	private void createButtons() {
-		Button lvlOneBut = new Button(165, 254, lvl1, levelPressed, -1);
-		Button lvlTwoBut = new Button(300, 254, lvl2, levelPressed, -2);
-		Button lvlThreeBut = new Button(436, 254, lvl3, levelPressed, -3);
-		Button smBackBut = new Button(144, 378, smBackButton, smBackPressed, 15);
+		Button lvlOneBut = new Button(165, 254,  imageMap.get("lvl1"),  imageMap.get("levelPressed"), -1);
+		Button lvlTwoBut = new Button(300, 254,  imageMap.get("lvl2"),  imageMap.get("levelPressed"), -2);
+		Button lvlThreeBut = new Button(436, 254,  imageMap.get("lvl3"),  imageMap.get("levelPressed"), -3);
+		Button smBackBut = new Button(144, 378,  imageMap.get("smBackButton"),  imageMap.get("smBackPressed"), 15);
 		levelButtons.add(lvlOneBut); levelButtons.add(lvlTwoBut);
 		levelButtons.add(lvlThreeBut); levelButtons.add(smBackBut);
 
 		
-		Button apcBut = new Button(75, 420, APCButton, pathwayPressed, 1);
-		Button scdkBut = new Button(75, 333, scdkButton, pathwayPressed, 2);
-		Button p53But  = new Button(75, 245, p53button, pathwayPressed, 3);
-		Button dnBut = new Button(415, 245, dnButton, pathwayPressed, 4);
-		Button tgfBut = new Button(415, 333, tgfButton, pathwayPressed, 5);
-		Button hedgehogBut = new Button(415, 420, hedgehogButton, pathwayPressed, 6);
-		Button wntBut = new Button(415, 508, wntButton, pathwayPressed, 7);
-		Button backBut = new Button(32, 508, backButton, backPressed, 0);
+		Button apcBut = new Button(75, 420, imageMap.get("APCButton"), imageMap.get("pathwayPressed"), 1);
+		Button scdkBut = new Button(75, 333,  imageMap.get("scdkButton"), imageMap.get("pathwayPressed"), 2);
+		Button p53But  = new Button(75, 245,  imageMap.get("p53button"), imageMap.get("pathwayPressed"), 3);
+		Button dnBut = new Button(415, 245,  imageMap.get("dnButton"), imageMap.get("pathwayPressed"), 4);
+		Button tgfBut = new Button(415, 333,  imageMap.get("tgfButton"), imageMap.get("pathwayPressed"), 5);
+		Button hedgehogBut = new Button(415, 420,  imageMap.get("hedgehogButton"), imageMap.get("pathwayPressed"), 6);
+		Button wntBut = new Button(415, 508,  imageMap.get("wntButton"), imageMap.get("pathwayPressed"), 7);
+		Button backBut = new Button(32, 508, imageMap.get("backButton"), imageMap.get("backPressed"), 0);
 		chooseYourOwnAdventureButtons.add(apcBut); chooseYourOwnAdventureButtons.add(scdkBut);
 		chooseYourOwnAdventureButtons.add(p53But); chooseYourOwnAdventureButtons.add(hedgehogBut);
 		chooseYourOwnAdventureButtons.add(dnBut); chooseYourOwnAdventureButtons.add(wntBut);
 		chooseYourOwnAdventureButtons.add(tgfBut); chooseYourOwnAdventureButtons.add(backBut);
 		
-		Button cellToCellBut = new Button(360, 237, cell2cell, cell2cellpressed, 4);
-		Button cellCycleBut = new Button(30, 237, cellcycle, cellcyclepressed, 1);
-		Button menuBut = new Button(30, 490, menu, menupressed, 0);
-		Button tutorialBut = new Button(275, 132, tutorial, tutorialpressed, 1);
-		Button chooseOwnBut = new Button(200, 490, chooseown, chooseownpressed, 11);
+		Button cellToCellBut = new Button(360, 237, imageMap.get("cell2cell"), imageMap.get("cell2cellpressed"), 4);
+		Button cellCycleBut = new Button(30, 237, imageMap.get("cellcycle"), imageMap.get("cellcyclepressed"), 1);
+		Button menuBut = new Button(30, 490, imageMap.get("menu"), imageMap.get("menupressed"), 0);
+		Button tutorialBut = new Button(275, 132, imageMap.get("tutorial"), imageMap.get("tutorialpressed"), 1);
+		Button chooseOwnBut = new Button(200, 490, imageMap.get("chooseown"), imageMap.get("chooseownpressed"), 11);
 		pathwayMissionButtons.add(cellToCellBut); pathwayMissionButtons.add(cellCycleBut);
 		pathwayMissionButtons.add(menuBut); pathwayMissionButtons.add(tutorialBut);
 		pathwayMissionButtons.add(chooseOwnBut);
 		
 		
-		Button backToPathwaysBut  = new Button(144, 372, btpButton, playPressed, 0);
-		Button helpBut = new Button(252, 372, helpButton, playPressed, 35);
-		Button playBut  = new Button(360, 372, playButton, playPressed, 30);
-		Button restartBut = new Button(467, 372, restartButton, playPressed, 20);
+		Button backToPathwaysBut  = new Button(144, 372, imageMap.get("btpButton"),  imageMap.get("playPressed"), 0);
+		Button helpBut = new Button(252, 372,  imageMap.get("helpButton"),  imageMap.get("playPressed"), 35);
+		Button playBut  = new Button(360, 372,  imageMap.get("playButton"),  imageMap.get("playPressed"), 30);
+		Button restartBut = new Button(467, 372,  imageMap.get("restartButton"),  imageMap.get("playPressed"), 20);
 		pauseScreenButtons.add(backToPathwaysBut); pauseScreenButtons.add(restartBut);
 		pauseScreenButtons.add(helpBut); pauseScreenButtons.add(playBut);
 		
-		Button backtoMenuBut = new Button(144, 372, backButton, null, 0);
-		Button replayBut = new Button(310, 372, replay, null, 20);
-		Button onwardsBut = new Button(467, 372, onwards, null, 25);
+		Button backtoMenuBut = new Button(144, 372, imageMap.get("backButton"), null, 0);
+		Button replayBut = new Button(310, 372,  imageMap.get("replay"), null, 20);
+		Button onwardsBut = new Button(467, 372,  imageMap.get("onwards"), null, 25);
 		missionButtons.add(replayBut); missionButtons.add(onwardsBut);
 		missionButtons.add(backtoMenuBut);
 		
 		
 	}
 	
-	
-	
-	private BufferedImage APCButton, backButton, backPressed,
-						  btpButton, bluePause, chooseBackground, 
-						  dnButton, hedgehogButton, helpButton, levelPressed,
-						  pathwayPressed, playButton, playPressed,
-						  redPressed, redPause, restartButton, 
-						  scdkButton, smBackButton, smBackPressed,
-						  tgfButton, wntButton, lvl1, lvl2, lvl3, p53button;
 	
 	public void update(Graphics g) {
 		paint(g);
@@ -686,7 +657,7 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		if (!playing) drawMenu();
 		if (pause) drawPauseScreen();
 		if (pickDifficulty && !playing) drawDifficultyScreen();
-		if (playing) bufferGraphics.drawImage(greyBorder, 0, 0, this);
+		if (playing) bufferGraphics.drawImage(imageMap.get("greyBorder"), 0, 0, this);
 	
 		g.drawImage(offscreen, 0, 0, this);
 	}
@@ -695,7 +666,7 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		bufferGraphics.setColor(Color.BLACK);
 		bufferGraphics.drawRect(0, 0, width, height);
 		bufferGraphics.fillRect(0, 0, width, height);
-		bufferGraphics.drawImage(redPause, 115, 155, this);
+		bufferGraphics.drawImage( imageMap.get("redPause"), 115, 155, this);
 		hosFont = hosFont.deriveFont(34.0f);
 		bufferGraphics.setFont(hosFont);
 		bufferGraphics.setColor(new Color(51, 51, 51));
@@ -710,7 +681,7 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	}
 	
 	private void drawPauseScreen() {
-		bufferGraphics.drawImage(redPause, 115, 155, this);
+		bufferGraphics.drawImage( imageMap.get("redPause"), 115, 155, this);
 		hosFont = hosFont.deriveFont(34.0f);
 		bufferGraphics.setFont(hosFont);
 		bufferGraphics.setColor(new Color(51, 51, 51));
@@ -737,11 +708,11 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	}
 	
 	private void drawBackground() {
-		bufferGraphics.drawImage(background, 0, 0, this);
+		bufferGraphics.drawImage(imageMap.get("background"), 0, 0, this);
 		if (pause) {
-			bufferGraphics.drawImage(pauseButtonPressed, 14, 548, this);
+			bufferGraphics.drawImage(imageMap.get("pauseButtonPressed"), 14, 548, this);
 		} else { 
-			bufferGraphics.drawImage(pauseButton, 14, 548, this);
+			bufferGraphics.drawImage(imageMap.get("pauseButton"), 14, 548, this);
 		}
 		hosFont = hosFont.deriveFont(34.0f);
 		bufferGraphics.setFont(hosFont);
@@ -752,13 +723,13 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	
 	private void drawEraser() {	
 		Point p = shooter.getPos();
-		bufferGraphics.drawImage(shooterImg, p.x, p.y, this);
+		bufferGraphics.drawImage( imageMap.get("shooterImg"), p.x, p.y, this);
 	}
 	
 	private void drawProgressBar() {
 		int heightProg = getHeightOfBar();
 		for (int i = 0; i < progress; i++) {
-			bufferGraphics.drawImage(progressBar, 623, 515 - heightProg * (i+1), progressBar.getWidth(this), heightProg, this);
+			bufferGraphics.drawImage( imageMap.get("progressBar"), 623, 515 - heightProg * (i+1), imageMap.get("progressBar").getWidth(this), heightProg, this);
 		}
 	}
 	
@@ -798,21 +769,21 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	private void drawMenu() {
 	
 		if (interfaceNumber == 0) {
-			bufferGraphics.drawImage(missionBackground, 0, 0, this);
+			bufferGraphics.drawImage( imageMap.get("missionBackground"), 0, 0, this);
 			for (int i = 0; i < pathwayMissionButtons.size(); i++) {
 				Button b = pathwayMissionButtons.get(i);
 				if (b.pressed) bufferGraphics.drawImage(b.buttonPressed, b.xPos, b.yPos, this);
 				else bufferGraphics.drawImage(b.button, b.xPos, b.yPos, this);
 			}
 		} else if (interfaceNumber == 11) {
-			bufferGraphics.drawImage(chooseBackground, 0, 0, this);
+			bufferGraphics.drawImage( imageMap.get("chooseBackground"), 0, 0, this);
 			for (int i = 0; i < chooseYourOwnAdventureButtons.size(); i++) {
 				Button b = chooseYourOwnAdventureButtons.get(i);
 				if (b.pressed) bufferGraphics.drawImage(b.buttonPressed, b.xPos, b.yPos, this);
 				else bufferGraphics.drawImage(b.button, b.xPos, b.yPos, this);
 			}
 		} else if (interfaceNumber == 12) {
-			bufferGraphics.drawImage(missionAccomplished, 115, 155, this);
+			bufferGraphics.drawImage( imageMap.get("missionAccomplished"), 115, 155, this);
 			hosFont = hosFont.deriveFont(18.0f);
 			bufferGraphics.setFont(hosFont);
 			FontMetrics fontMetrics = bufferGraphics.getFontMetrics(hosFont);
@@ -858,13 +829,13 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	
 	private void drawCentralMolecule() {
 		if (rotation%2 == 0) {
-			bufferGraphics.drawImage(centerMolecule, 363, 263, this);	
+			bufferGraphics.drawImage(imageMap.get("centerMolecule"), 363, 263, this);	
 		} else {
 			AffineTransform affineTransform = new AffineTransform();
-			affineTransform.rotate(Math.toRadians(45), 363 + centerMolecule.getWidth()/2, 263 + centerMolecule.getHeight()/2);
+			affineTransform.rotate(Math.toRadians(45), 363 + imageMap.get("centerMolecule").getWidth()/2, 263 + imageMap.get("centerMolecule").getHeight()/2);
 			affineTransform.translate(363, 263);
 			Graphics2D g2d = (Graphics2D) bufferGraphics;
-			g2d.drawImage(centerMolecule, affineTransform, this);	
+			g2d.drawImage(imageMap.get("centerMolecule"), affineTransform, this);	
 		}
 		
 		int textHeight = 40;
@@ -1187,7 +1158,7 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		
 		if (ballExistence && currentBall.dy != 10) {
 			ballRec = currentBall.getBounds();
-			Rectangle centerRect = new Rectangle(373, 272, centerMolecule.getWidth(null) - 20, centerMolecule.getHeight(null) - 20);
+			Rectangle centerRect = new Rectangle(373, 272, imageMap.get("centerMolecule").getWidth(null) - 20, imageMap.get("centerMolecule").getHeight(null) - 20);
 			Rectangle startingArrowRect;
 			if (ballExistence && rotation % 2 == 0) {			
 				if (arr1 > 0) {
@@ -1367,142 +1338,6 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		}
 	}
 	
-	
-	
-	
-	/*
-	private ArrowType checkSimplificationRules(CurrentBall b) {
-		ArrowType aType = null;
-		ArrowType bType = b.simplifyType;
-		ArrowType cType = null;
-		
-		if (simpleIndex == 0) {
-			switch(b.strand) {
-			case 0: aType = strandOne.arrowType; break;
-			case 1: aType = strandTwo.arrowType; break;
-			case 2: aType = strandThree.arrowType; break;
-			case 3: aType = strandFour.arrowType; break;
-			}
-		} else {
-			switch(b.strand) {
-			case 0: cType = inPlayOne.get(simpleIndex-1).simplifyType; break;
-			case 1: cType = inPlayTwo.get(simpleIndex-1).simplifyType; break;
-			case 2: cType = inPlayThree.get(simpleIndex-1).simplifyType; break;
-			case 3: cType = inPlayFour.get(simpleIndex-1).simplifyType; break;
-			}
-		}
-		
-		if (bType == null) {
-			if (cType != null) return cType;
-			return aType;
-		}
-		
-		if (cType != null) {
-			if ((cType == ArrowType.ACTIVATE && bType == ArrowType.INHIBIT) || (cType == ArrowType.INHIBIT && bType == ArrowType.ACTIVATE)) {
-				return ArrowType.INHIBIT;
-				
-			} else {
-				return ArrowType.ACTIVATE;
-			} 
-		} else {
-			if ((aType == ArrowType.ACTIVATE && bType == ArrowType.INHIBIT) || (aType == ArrowType.INHIBIT && bType == ArrowType.ACTIVATE)) {
-				return ArrowType.INHIBIT;
-
-			} else {
-				return ArrowType.ACTIVATE;
-			}
-		}
-	}
-	
-	private void changeArrows(CurrentBall b) {
-		CurrentBall c = null;
-		StartingArrow a = null;
-		ArrowType aType = null;
-		ArrowType bType = null;
-		ArrowType cType = null;
-		
-		if (simpleIndex == 0) {
-			switch(b.strand) {
-			case 0: a = strandOne; break;
-			case 1: a = strandTwo; break;
-			case 2: a = strandThree; break;
-			case 3: a = strandFour; break;
-			}
-		} else {
-			switch(b.strand) {
-			case 0: c = inPlayOne.get(simpleIndex-1); break;
-			case 1: c = inPlayTwo.get(simpleIndex-1); break;
-			case 2: c = inPlayThree.get(simpleIndex-1); break;
-			case 3: c = inPlayFour.get(simpleIndex-1); break;
-			}
-		}
-		
-		if (c != null) {
-			if ((cType == ArrowType.ACTIVATE && bType == ArrowType.INHIBIT) || (cType == ArrowType.INHIBIT && bType == ArrowType.ACTIVATE)) {
-				c.simplifyType = ArrowType.INHIBIT;
-				switch(b.strand) {
-				case 0: c.arrowImages = blueInhibitor; break;
-				case 1: c.arrowImages = orangeInhibitor; break;
-				case 2: c.arrowImages = redInhibitor; break;
-				case 3: c.arrowImages = greenInhibitor; break;
-				}
-			} else {
-				c.simplifyType = ArrowType.ACTIVATE;
-				switch(b.strand) {
-				case 0: c.arrowImages = blueArrow; break;
-				case 1: c.arrowImages = orangeArrow; break;
-				case 2: c.arrowImages = redArrow; break;
-				case 3: c.arrowImages = greenArrow; break;
-				}
-			} 
-		} else {
-			if ((aType == ArrowType.ACTIVATE && bType == ArrowType.INHIBIT) || (aType == ArrowType.INHIBIT && bType == ArrowType.ACTIVATE)) {
-				a.arrowType = ArrowType.INHIBIT;
-				switch(b.strand) {
-				case 0: a.arrowImages = blueInhibitor; break;
-				case 1: a.arrowImages = orangeInhibitor; break;
-				case 2: a.arrowImages = redInhibitor; break;
-				case 3: a.arrowImages = greenInhibitor; break;
-				}
-			} else {
-				a.arrowType = ArrowType.ACTIVATE;
-				switch(b.strand) {
-				case 0: a.arrowImages = blueArrow; break;
-				case 1: a.arrowImages = orangeArrow; break;
-				case 2: a.arrowImages = redArrow; break;
-				case 3: a.arrowImages = greenArrow; break;
-				}
-			}
-		}
-		
-	}
-	
-	private void getObjectAt(int x, int y) {
-		for (int i = 0; i < inPlayOne.size(); i++) {
-			CurrentBall b = inPlayOne.get(i);
-			setSimpleBall(b, x, y, i);
-		}
-		for (int i = 0; i < inPlayTwo.size(); i++) {
-			CurrentBall b = inPlayTwo.get(i);
-			setSimpleBall(b, x, y, i);	
-		}
-		for (int i = 0; i < inPlayThree.size(); i++) {
-			CurrentBall b = inPlayThree.get(i);
-			setSimpleBall(b, x, y, i);	
-		}
-		for (int i = 0; i < inPlayFour.size(); i++) {
-			CurrentBall b = inPlayFour.get(i);
-			setSimpleBall(b, x, y, i);
-		}
-	}
-	
-	private void setSimpleBall(CurrentBall b, int x, int y, int i) {
-		if (b.getBounds().contains(x, y)) {
-			simplifyBall = b;
-			simpleIndex = i;
-		}
-	}
-*/
 	@Override
 	public void mouseEntered(MouseEvent arg0) {		
 	}
