@@ -41,6 +41,10 @@ public class CurrentBall {
 		position.y = y;
 	}
 	
+	public void setPosChange(int x, int y) {
+		position = new Point(x, y);
+	}
+	
 	public void setArrowImage(BufferedImage arrowImg) {
 		arrowImage = arrowImg;
 	}
@@ -51,8 +55,8 @@ public class CurrentBall {
 	}
 	
 	public void setMove(int type) {
-		if (type == 2 || type == 4) posChange.x *= -1;
-		if (type == 3 || type == 4) posChange.y *= -1;
+		if (type == 1 || type == 2) posChange.x *= -1;
+		if (type == 3 || type == 2) posChange.y *= -1;
 	}
 	
 	public void move() {

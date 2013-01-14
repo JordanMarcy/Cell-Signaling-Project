@@ -16,7 +16,7 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	private static final long serialVersionUID = 1;	
 	private static final int width = 700, height = 600;
 	private Thread mainLoop;
-	private boolean running = true;
+	//private boolean running = true;
 	private int countdown = 50;
 	
 	private Graphics bufferGraphics;
@@ -37,9 +37,8 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	private Random generator = new Random();
 	private int currentLevel = 0;
 	private int difficulty = 1;
-	private int cannon = 0, setCannon = 0, rotation = 0, strand = 0;
+	private int setCannon = 0, rotation = 0, strand = 0;
 	private int score = 0, progress = 0;
-	private int[] arr = new int[4];
 	private int numberOfMolecules[] = new int[4];
 	
 	
@@ -63,9 +62,9 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	
 	private boolean ballExistence = false, eraserFired = false, simplifying = false;
 	private boolean pause = false, playing = false, gameOver = false;
+	private boolean pickDifficulty = false;
 	
-	public void init() {
-		
+	public void init() {	
 		setSize(width, height);
 		offscreen = createImage(width, height);
 		bufferGraphics = offscreen.getGraphics();
@@ -94,7 +93,6 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	}
 	
 	private void setUpLists(int level) {
-		arr[0] = 0; arr[1] = 0; arr[2] = 0; arr[3] = 0;
 		
 		listOne.clear(); listTwo.clear(); listThree.clear(); listFour.clear();
 		inPlayOne.clear(); inPlayTwo.clear(); inPlayThree.clear(); inPlayFour.clear();
@@ -111,7 +109,10 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		case 6: setUpLevelSix(); break;
 		case 7: setUpLevelSeven(); break;
 		}
+		getNextBall();
+		playing = true;
 		rotate();
+		repaint();
 	}
 	
 	private void setUpLevelOne() {
@@ -153,9 +154,7 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		score = 0;
 		progress = 0;
 		centerTitle = imageMap.get("p53");
-		
-		arr[0] = 0; arr[1] = 0; arr[2] = 0; arr[3] = 0;
-		
+				
 		listOne.clear(); listTwo.clear(); listThree.clear(); listFour.clear();
 		inPlayOne.clear(); inPlayTwo.clear(); inPlayThree.clear(); inPlayFour.clear(); 
 	
@@ -187,7 +186,6 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		progress = 0;
 		centerTitle = imageMap.get("sckd");
 		
-		arr[0] = 0; arr[1] = 0; arr[2] = 0; arr[3] = 0;
 
 		listOne.clear(); listTwo.clear(); listThree.clear(); listFour.clear();
 		inPlayOne.clear(); inPlayTwo.clear(); inPlayThree.clear(); inPlayFour.clear();
@@ -562,14 +560,13 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	}
 	
 	public void destroy() {
-		running = false;
 		mainLoop = null;
 		ballExistence = false;
 	}
 	
 	@Override
 	public void run() {
-		while(running && !gameOver) {
+		while(!gameOver) {
 			if (!pause && playing && currentLevel > 0 && !simplifying) {
 				rotate();
 				moveEraser();
@@ -580,11 +577,9 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 				try {
 					Thread.sleep(45);
 				} catch (InterruptedException e) {}
-			}
-			if (simplifying) {
+			} else if (simplifying) {
 				checkSimplificationProgress();	
-			}
-			if (!playing) {
+			} else if (!playing) {
 				repaint();
 			}		
 		}
@@ -637,11 +632,10 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	
 	@Override public void paint(final Graphics g) {
 		activateAntiAliasing(bufferGraphics);
-		bufferGraphics.setFont(hosFont);
 		drawBackground();
-		if (!simplifying) drawCannons();
 		drawCentralMolecule();
 		drawMoleculesInPlay();
+		if (!simplifying) drawCannons();
 		if (!simplifying) drawEraser();
 		if (!simplifying) drawProgressBar();
 		drawCurrentBall();	
@@ -654,23 +648,23 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	
 	private void drawDifficultyScreen() {
 		bufferGraphics.setColor(Color.BLACK);
-		bufferGraphics.drawRect(0, 0, width, height);
-		bufferGraphics.fillRect(0, 0, width, height);
-		bufferGraphics.drawImage( imageMap.get("redPause"), 115, 155, this);
-		hosFont = hosFont.deriveFont(34.0f);
-		bufferGraphics.setFont(hosFont);
-		bufferGraphics.setColor(new Color(51, 51, 51));
-		bufferGraphics.drawString("Pick Difficulty", 144, 216);
+		bufferGraphics.drawRect(0, 0, width, height); bufferGraphics.fillRect(0, 0, width, height);
+		bufferGraphics.drawImage(imageMap.get("redPause"), 115, 155, this);
+		drawString(34, "Pick Difficulty", new Point(144, 216));
 		drawButtonsFromList(levelButtons);		
 	}
 	
 	private void drawPauseScreen() {
-		bufferGraphics.drawImage( imageMap.get("redPause"), 115, 155, this);
-		hosFont = hosFont.deriveFont(34.0f);
+		bufferGraphics.drawImage(imageMap.get("redPause"), 115, 155, this);
+		drawString(34, getTitleString(), new Point(144, 216));
+		drawButtonsFromList(pauseScreenButtons);
+	}
+	
+	private void drawString(int fontSize, String string, Point position) {
+		hosFont = hosFont.deriveFont(fontSize);
 		bufferGraphics.setFont(hosFont);
 		bufferGraphics.setColor(new Color(51, 51, 51));
-		bufferGraphics.drawString(getTitleString(), 144, 216);
-		drawButtonsFromList(pauseScreenButtons);
+		bufferGraphics.drawString(string, position.x, position.y);
 	}
 	
 	private String getTitleString() {
@@ -742,13 +736,13 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	
 	private void drawMenu() {
 		if (interfaceNumber == 0) {
-			bufferGraphics.drawImage( imageMap.get("missionBackground"), 0, 0, this);
+			bufferGraphics.drawImage(imageMap.get("missionBackground"), 0, 0, this);
 			drawButtonsFromList(pathwayMissionButtons);
 		} else if (interfaceNumber == 11) {
-			bufferGraphics.drawImage( imageMap.get("chooseBackground"), 0, 0, this);
+			bufferGraphics.drawImage(imageMap.get("chooseBackground"), 0, 0, this);
 			drawButtonsFromList(chooseYourOwnAdventureButtons);
 		} else if (interfaceNumber == 12) {
-			bufferGraphics.drawImage( imageMap.get("missionAccomplished"), 115, 155, this);
+			bufferGraphics.drawImage(imageMap.get("missionAccomplished"), 115, 155, this);
 			hosFont = hosFont.deriveFont(18.0f);
 			bufferGraphics.setFont(hosFont);
 			FontMetrics fontMetrics = bufferGraphics.getFontMetrics(hosFont);
@@ -868,7 +862,6 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		}
 		if ((key == KeyEvent.VK_LEFT || key == KeyEvent.VK_UP) && !simplifying) {
 			rotation = (rotation + 7)%8;
-			if (rotation%2 == 1) cannon = (cannon + 1)%4;
 			rotate();
 		}
 		if (key == KeyEvent.VK_P && !simplifying) {
@@ -879,7 +872,6 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		}
 		if ((key == KeyEvent.VK_RIGHT || key == KeyEvent.VK_DOWN) && !simplifying) {
 			rotation = (rotation + 1)%8;
-			if (rotation%2 == 0) cannon = (cannon + 3)%4;
 			rotate();
 			
 		}
@@ -897,22 +889,17 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		if (startingArrowStrand[1] != null) setStartingArrowPosition(startingArrowStrand[1], 0);
 		if (startingArrowStrand[2] != null) setStartingArrowPosition(startingArrowStrand[2], 2);
 		if (startingArrowStrand[3] != null) setStartingArrowPosition(startingArrowStrand[3], 4);
-
-		for (int i = 0; i < inPlayOne.size(); i++) {
-			CurrentBall b = inPlayOne.get(i);
-			setBallPosition(i, 6, b);
-		}
-		for (int i = 0; i < inPlayTwo.size(); i++) {
-			CurrentBall b = inPlayTwo.get(i);
-			setBallPosition(i, 0, b);
-		}
-		for (int i = 0; i < inPlayThree.size(); i++) {
-			CurrentBall b = inPlayThree.get(i);
-			setBallPosition(i, 2, b);
-		}
-		for (int i = 0; i < inPlayFour.size(); i++) {
-			CurrentBall b = inPlayFour.get(i);
-			setBallPosition(i, 4, b);
+		
+		repositionBallsInArray(inPlayOne, 6);
+		repositionBallsInArray(inPlayTwo, 0);
+		repositionBallsInArray(inPlayThree, 2);
+		repositionBallsInArray(inPlayFour, 4);
+	}
+	
+	private void repositionBallsInArray(ArrayList<CurrentBall> inPlay, int strandPosition) {
+		for (int i = 0; i < inPlay.size(); i++) {
+			CurrentBall b = inPlay.get(i);
+			setBallPosition(i, strandPosition, b);
 		}
 	}
 
@@ -1010,43 +997,25 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	}
 		
 	private void fireBall() {
-		if (setCannon == 0) {
-			ballExistence = true;
-			cannon = (400-(rotation/2))%4;
-		}
-		if (setCannon == 1) {
-			ballExistence = true;
-			currentBall.setMove(2);
-			cannon = (401-(rotation/2))%4;
-
-		}
-		if (setCannon == 2) {
-			ballExistence = true;
-			currentBall.setMove(4);
-			cannon = (402-(rotation/2))%4;
-		}
-		if (setCannon == 3) {
-			ballExistence = true;
-			currentBall.setMove(3);
-			cannon = (403-(rotation/2))%4;
-		}
+		ballExistence = true;
+		currentBall.setMove(setCannon);
 	}
 	
 	private void increaseArray() {
 		switch(strand) {
-		case 0: arr[0]++; inPlayOne.add(currentBall); break; 
-		case 1: arr[1]++; inPlayTwo.add(currentBall); break;
-		case 2: arr[2]++; inPlayThree.add(currentBall); break;
-		case 3: arr[3]++; inPlayFour.add(currentBall); break;
+		case 0: inPlayOne.add(currentBall); break; 
+		case 1: inPlayTwo.add(currentBall); break;
+		case 2: inPlayThree.add(currentBall); break;
+		case 3: inPlayFour.add(currentBall); break;
 		}
 	}
 	
 	private void decreaseArray(int collisionStrand, CurrentBall b) {
 		switch(collisionStrand) {
-		case 0: arr[0]--; inPlayOne.remove(b); break;
-		case 1: arr[1]--; inPlayTwo.remove(b); break;
-		case 2: arr[2]--; inPlayThree.remove(b); break;
-		case 3: arr[3]--; inPlayFour.remove(b); break;
+		case 0: inPlayOne.remove(b); break;
+		case 1: inPlayTwo.remove(b); break;
+		case 2: inPlayThree.remove(b); break;
+		case 3: inPlayFour.remove(b); break;
 		}
 	}
 	
@@ -1055,8 +1024,7 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 			if (previousBall.getStrand() != currentBall.getStrand()) {
 				decreaseArray(previousBall.getStrand(), previousBall);
 				progress--;
-				currentBall.getPosChange().x = 0;
-				currentBall.getPosChange().y = 10;
+				currentBall.setPosChange(0, 10);
 			} else {
 				if (progress < 11) progress++;
 				score += 50;
@@ -1071,8 +1039,7 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	private void checkStartingArrow(Rectangle arrowRect, Rectangle ballRec, int arrowStrand) {
 		if (ballRec.intersects(arrowRect)) {
 			if (currentBall.getStrand() != arrowStrand) {
-				currentBall.getPosChange().x = 0;
-				currentBall.getPosChange().y = 10;
+				currentBall.setPosChange(0, 10);
 			} else if (currentBall.getPosChange().y != 10) {
 				if (progress < 11) progress++;
 				score += 25;
@@ -1085,59 +1052,34 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		}
 	}
 	
-	public void checkCollisions() {
-		CurrentBall previousBall;
-		Rectangle ballRec = null;
-		
+	private void checkLastInStrandCollision(ArrayList<CurrentBall> inPlay, int strandNum) {
+		if (inPlay.size() > 0) {
+			CurrentBall previousBall = inPlay.get(inPlay.size()-1);
+			Rectangle prevRect = new Rectangle(previousBall.getPosition().x, previousBall.getPosition().y, 35, 35);
+			checkPreviousBall(prevRect, currentBall.getBounds(), previousBall);
+		} else if (startingArrowStrand[strandNum] != null){
+			Rectangle startingArrowRect = startingArrowStrand[strandNum].getBounds();
+			checkStartingArrow(currentBall.getBounds(), startingArrowRect, strandNum);
+		}
+	}
+	
+	private void checkCollisions() {		
 		if (ballExistence && currentBall.getPosChange().y != 10) {
-			ballRec = currentBall.getBounds();
-			Rectangle centerRect = new Rectangle(373, 272, imageMap.get("centerMolecule").getWidth(null) - 20, imageMap.get("centerMolecule").getHeight(null) - 20);
-			Rectangle startingArrowRect;
-			if (ballExistence && rotation % 2 == 0) {			
-				if (arr[0] > 0) {
-					previousBall = inPlayOne.get(inPlayOne.size()-1);
-					Rectangle prevRect = new Rectangle(previousBall.getPosition().x, previousBall.getPosition().y, 35, 35);
-					checkPreviousBall(prevRect, ballRec, previousBall);
-				} else if (startingArrowStrand[0] != null){
-					startingArrowRect = startingArrowStrand[0].getBounds();
-					checkStartingArrow(ballRec, startingArrowRect, 0);
-				}
-				if (arr[1] > 0) {
-					previousBall = inPlayTwo.get(inPlayTwo.size()-1);
-					Rectangle prevRect = new Rectangle(previousBall.getPosition().x, previousBall.getPosition().y, 35, 35);
-					checkPreviousBall(prevRect, ballRec, previousBall);
-				} else if (startingArrowStrand[1] != null) {
-						startingArrowRect = startingArrowStrand[1].getBounds();
-						checkStartingArrow(ballRec, startingArrowRect, 1);
-				}
-				if (arr[2] > 0) {
-					previousBall = inPlayThree.get(inPlayThree.size()-1);
-					Rectangle prevRect = new Rectangle(previousBall.getPosition().x, previousBall.getPosition().y, 35, 35);
-					checkPreviousBall(prevRect, ballRec, previousBall);
-				} else if (startingArrowStrand[2] != null) {
-					startingArrowRect = startingArrowStrand[2].getBounds();
-					checkStartingArrow(ballRec, startingArrowRect, 2);
-				}
-				if (arr[3] > 0) {
-					previousBall = inPlayFour.get(inPlayFour.size()-1);
-					Rectangle prevRect = new Rectangle(previousBall.getPosition().x, previousBall.getPosition().y, 35, 35);
-					checkPreviousBall(prevRect, ballRec, previousBall);
-				} else if (startingArrowStrand[3] != null){
-					startingArrowRect = startingArrowStrand[3].getBounds();
-					checkStartingArrow(ballRec, startingArrowRect, 3);
-				}				
+			if (ballExistence && rotation % 2 == 0) {
+				checkLastInStrandCollision(inPlayOne, 0);
+				checkLastInStrandCollision(inPlayTwo, 1);
+				checkLastInStrandCollision(inPlayThree, 2);
+				checkLastInStrandCollision(inPlayFour, 3);				
 			}			
 			if (eraserFired && ballExistence) {
-				if (shooter.getBounds().intersects(ballRec)) {
+				if (shooter.getBounds().intersects(currentBall.getBounds())) {
 					rotate();
 					repaint();
 					getNextBall();
 				}
 			}
-			if (centerRect.intersects(ballRec)) {
-				getNextBall();
-			}
-			
+			Rectangle centerRect = new Rectangle(373, 272, imageMap.get("centerMolecule").getWidth(null) - 20, imageMap.get("centerMolecule").getHeight(null) - 20);
+			if (centerRect.intersects(currentBall.getBounds())) getNextBall();
 		}
 		if (ballExistence) {
 			if (currentBall.getPosition().y > 680 || currentBall.getPosition().y < 10) {
@@ -1161,13 +1103,13 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 			}
 			
 			switch (strand) {
-			case 0: if (arr[0] < numberOfMolecules[0]) {currentBall = listOne.get(arr[0]); newBall = true;} 
+			case 0: if (inPlayOne.size() < numberOfMolecules[0]) {currentBall = listOne.get(inPlayOne.size()); newBall = true;} 
 				break;
-			case 1: if (arr[1] < numberOfMolecules[1]) {currentBall = listTwo.get(arr[1]); newBall = true;}
+			case 1: if (inPlayTwo.size() < numberOfMolecules[1]) {currentBall = listTwo.get(inPlayTwo.size()); newBall = true;}
 				break;
-			case 2: if (arr[2] < numberOfMolecules[2]) {currentBall = listThree.get(arr[2]); newBall = true;}
+			case 2: if (inPlayThree.size() < numberOfMolecules[2]) {currentBall = listThree.get(inPlayThree.size()); newBall = true;}
 				break;
-			case 3: if (arr[3] < numberOfMolecules[3]) {currentBall = listFour.get(arr[3]); newBall = true;}
+			case 3: if (inPlayFour.size() < numberOfMolecules[3]) {currentBall = listFour.get(inPlayFour.size()); newBall = true;}
 				break;
 			case 4: currentBall = listFive.get(0); newBall = true; break;
 			}
@@ -1175,12 +1117,10 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 			if (newBall) {
 				setCurrentBallPosition();
 			}
-			
-			if (arr[0] == numberOfMolecules[0] && arr[1] == numberOfMolecules[1] && arr[2] == numberOfMolecules[2] && arr[3] == numberOfMolecules[3]) {
+			if (inPlayOne.size() == numberOfMolecules[0] && inPlayTwo.size() == numberOfMolecules[1] && inPlayThree.size() == numberOfMolecules[2] && inPlayFour.size() == numberOfMolecules[3]) {
 				newBall = true;	
 				ballExistence = false;
 				rotateToPosition(4);
-				//simplifying = true;
 				interfaceNumber = 12;
 				playing = false;
 				
@@ -1191,7 +1131,7 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	
 	
 	private void setCurrentBallPosition() {
-		currentBall.getPosChange().x = 4; currentBall.getPosChange().y = 4;
+		currentBall.setPosChange(4, 4);
 		switch (setCannon) {
 		case 0: currentBall.setPos(118, 18); break;
 		case 1: currentBall.setPos(635, 18); break;
@@ -1202,66 +1142,44 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	
 	@Override
 	public void mouseClicked(MouseEvent arg0) {		
-		//if (!playing) {
-			checkToSetUpLevel(arg0);
-		//}
-		if (simplifying) {
-			
-		}
+		checkToSetUpLevel(arg0);
 	}
 	
-
+	private void checkIfButtonPressed(ArrayList<Button> buttonList, Point p) {
+		for (int i = 0; i < buttonList.size(); i++) {
+			Button b = buttonList.get(i);
+			if (b.getBounds().contains(p)) setUpInterfaceOrLevels(b.getTarget());
+		}
+	}
 		
 	private void checkToSetUpLevel(MouseEvent arg0) {
 		if (pickDifficulty) {
-			for (int i = 0; i < levelButtons.size(); i++) {
-				Button b = levelButtons.get(i);
-				if (b.getBounds().contains(arg0.getPoint())) setUpInterfaceOrLevels(b.getTarget());
-			}
-			if (currentLevel > 0 && currentLevel < 8 && !pickDifficulty) {
-				setUpLists(currentLevel);
-				getNextBall();
-				playing = true;
-				rotate();
-				repaint();
-			}
+			checkIfButtonPressed(levelButtons, arg0.getPoint());
 		} else if (pause) {
-			for (int i = 0; i < pauseScreenButtons.size(); i++) {
-				Button b = pauseScreenButtons.get(i);
-				if (b.getBounds().contains(arg0.getPoint())) setUpInterfaceOrLevels(b.getTarget());
-			} 
-		}
-			else if (interfaceNumber == 0) {
-			for (int i = 0; i < pathwayMissionButtons.size(); i++) {
-				Button b = pathwayMissionButtons.get(i);
-				if (b.getBounds().contains(arg0.getPoint())) setUpInterfaceOrLevels(b.getTarget());
-			}
+			checkIfButtonPressed(pauseScreenButtons, arg0.getPoint());
+		} else if (interfaceNumber == 0) {
+			checkIfButtonPressed(pathwayMissionButtons, arg0.getPoint());
 		} else if (interfaceNumber == 11) {
-			for (int i = 0; i < chooseYourOwnAdventureButtons.size(); i++) {
-				Button b = chooseYourOwnAdventureButtons.get(i);
-				if (b.getBounds().contains(arg0.getPoint())) setUpInterfaceOrLevels(b.getTarget());
-			}
+			checkIfButtonPressed(chooseYourOwnAdventureButtons, arg0.getPoint());
 		} else if (interfaceNumber == 12) {
-			for (int i = 0; i < missionButtons.size(); i++) {
-				Button b = missionButtons.get(i);
-				if (b.getBounds().contains(arg0.getPoint())) setUpInterfaceOrLevels(b.getTarget());
-			}
+			checkIfButtonPressed(missionButtons, arg0.getPoint());
 		}
 		
 	}
 	
-	private boolean pickDifficulty = false;
-	
 	private void setUpInterfaceOrLevels(int number) {
 		interfaceNumber = number;
-		if (number > 0 && number < 8) currentLevel = number;
+		if (number < 0) {
+			difficulty = -number; 
+			pickDifficulty = false; 
+			setUpLists(currentLevel);
+		}
+		if (number > 0 && number < 8) {
+			currentLevel = number;
+			pickDifficulty = true;
+		}
 		switch(number) {
-		case -3: difficulty = 3; pickDifficulty = false; break;
-		case -2: difficulty = 2; pickDifficulty = false; break;
-		case -1: difficulty = 1; pickDifficulty = false; break;
 		case 0: interfaceNumber = 0; break;
-		case 1: case 2: case 3: case 4: 
-		case 5: case 6: case 7:	pickDifficulty = true; break;
 		case 10: break; //playTutorial 
 		case 11: interfaceNumber = 11; break;
 		case 15: pickDifficulty = false; break;
