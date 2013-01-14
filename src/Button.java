@@ -1,28 +1,27 @@
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 
-	
-	
-	
-	
 
 public class Button {
-	public BufferedImage button, buttonPressed;
-	public boolean pressed;
+	private BufferedImage button, buttonPressed;
+	private boolean pressed;
 	private Rectangle bounds;
-	public int xPos, yPos, target;
+	private int target;
+	private Point position;
 	
-	public Button(int x, int y, BufferedImage b, BufferedImage bp, int targ) {
-		xPos = x; yPos = y;
+	public BufferedImage getButton() {return button;}
+	public BufferedImage getButtonPressed() {return buttonPressed;}
+	public boolean isPressed() {return pressed;}
+	public int getTarget() {return target;}
+	public Point getPosition() {return position;}
+	public Rectangle getBounds() {return bounds;}
+
+	public Button(int x, int y, BufferedImage b, BufferedImage bp, int target) {
+		position = new Point(x, y);
 		bounds = new Rectangle(x, y, b.getWidth(), b.getHeight());
-		target = targ;
+		this.target = target;
 		button = b;
 		buttonPressed = bp;
-	}
-	
-	
-	
-	public Rectangle getBounds() {
-		return bounds;
 	}
 }

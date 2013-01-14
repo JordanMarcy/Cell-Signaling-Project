@@ -5,6 +5,7 @@ import java.awt.Rectangle;
 
 public class Shooter {
 	private int xPos = 300, yPos = 530;
+	
 	public Shooter() {
 		xPos = 300;
 	}
