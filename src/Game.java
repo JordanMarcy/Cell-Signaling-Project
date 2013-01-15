@@ -16,7 +16,6 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	private static final long serialVersionUID = 1;	
 	private static final int width = 700, height = 600;
 	private Thread mainLoop;
-	//private boolean running = true;
 	private int countdown = 50;
 	
 	private Graphics bufferGraphics;
@@ -40,7 +39,7 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	private int setCannon = 0, rotation = 0, strand = 0;
 	private int score = 0, progress = 0;
 	private int numberOfMolecules[] = new int[4];
-	
+	private int interfaceNumber = 0;
 	
 	private BufferedImage centerTitle;
 	private ArrayList<CurrentBall> listOne = new ArrayList<CurrentBall>();
@@ -59,10 +58,13 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	private ArrayList<Button> pauseScreenButtons = new ArrayList<Button>();
 	private ArrayList<Button> levelButtons = new ArrayList<Button>();
 	private ArrayList<Button> missionButtons = new ArrayList<Button>();
+	private ArrayList<Button> tutorialButtons = new ArrayList<Button>();
+	private ArrayList<Button> helpButtons = new ArrayList<Button>();
+
 	
 	private boolean ballExistence = false, eraserFired = false, simplifying = false;
-	private boolean pause = false, playing = false, gameOver = false;
-	private boolean pickDifficulty = false;
+	private boolean pause = false, help = false, playing = false, gameOver = false;
+	private boolean pickDifficulty = false, tutorial = false;
 	
 	public void init() {	
 		setSize(width, height);
@@ -496,18 +498,22 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		
 		url = new URL(getCodeBase(), "tutorialSprites_default.png");
 		BufferedImage tutorialSprites = ImageIO.read(url);
-		
+		imageMap.put("gotitButton", tutorialSprites.getSubimage(0, 0, 90, 50));
 		imageMap.put("missionAccomplished", tutorialSprites.getSubimage(90, 0, 470, 290));
+		imageMap.put("pathwayComplete", tutorialSprites.getSubimage(560, 0, 354, 100));
+		imageMap.put("pathwaySimplified", tutorialSprites.getSubimage(914, 0, 354, 100));
+		imageMap.put("quitLevelButton", tutorialSprites.getSubimage(1268, 0, 90, 50));
+		imageMap.put("tutorialPageOne", tutorialSprites.getSubimage(1449, 0, 470, 290));
+		imageMap.put("tutorialPageTwo", tutorialSprites.getSubimage(1919, 0, 354, 202));
 		imageMap.put("onwards", tutorialSprites.getSubimage(2273, 0, 90, 50));
 		imageMap.put("replay", tutorialSprites.getSubimage(1358, 0, 91, 51));
 	}
-	
 	
 	private void createButtons() {
 		Button lvlOneBut = new Button(165, 254,  imageMap.get("lvl1"),  imageMap.get("levelPressed"), -1);
 		Button lvlTwoBut = new Button(300, 254,  imageMap.get("lvl2"),  imageMap.get("levelPressed"), -2);
 		Button lvlThreeBut = new Button(436, 254,  imageMap.get("lvl3"),  imageMap.get("levelPressed"), -3);
-		Button smBackBut = new Button(144, 378,  imageMap.get("smBackButton"),  imageMap.get("smBackPressed"), 15);
+		Button smBackBut = new Button(144, 378,  imageMap.get("smBackButton"),  imageMap.get("smBackPressed"), 0);
 		levelButtons.add(lvlOneBut); levelButtons.add(lvlTwoBut);
 		levelButtons.add(lvlThreeBut); levelButtons.add(smBackBut);
 
@@ -528,7 +534,7 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		Button cellToCellBut = new Button(360, 237, imageMap.get("cell2cell"), imageMap.get("cell2cellpressed"), 4);
 		Button cellCycleBut = new Button(30, 237, imageMap.get("cellcycle"), imageMap.get("cellcyclepressed"), 1);
 		Button menuBut = new Button(30, 490, imageMap.get("menu"), imageMap.get("menupressed"), 0);
-		Button tutorialBut = new Button(275, 132, imageMap.get("tutorial"), imageMap.get("tutorialpressed"), 1);
+		Button tutorialBut = new Button(275, 132, imageMap.get("tutorial"), imageMap.get("tutorialpressed"), 10);
 		Button chooseOwnBut = new Button(200, 490, imageMap.get("chooseown"), imageMap.get("chooseownpressed"), 11);
 		pathwayMissionButtons.add(cellToCellBut); pathwayMissionButtons.add(cellCycleBut);
 		pathwayMissionButtons.add(menuBut); pathwayMissionButtons.add(tutorialBut);
@@ -536,18 +542,25 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		
 		
 		Button backToPathwaysBut  = new Button(144, 372, imageMap.get("btpButton"),  imageMap.get("playPressed"), 0);
-		Button helpBut = new Button(252, 372,  imageMap.get("helpButton"),  imageMap.get("playPressed"), 35);
-		Button playBut  = new Button(360, 372,  imageMap.get("playButton"),  imageMap.get("playPressed"), 30);
-		Button restartBut = new Button(467, 372,  imageMap.get("restartButton"),  imageMap.get("playPressed"), 20);
+		Button helpBut = new Button(360, 372,  imageMap.get("helpButton"),  imageMap.get("playPressed"), 40);
+		Button playBut  = new Button(467, 372,  imageMap.get("playButton"),  imageMap.get("playPressed"), 30);
+		Button restartBut = new Button(252, 372,  imageMap.get("restartButton"),  imageMap.get("playPressed"), 20);
 		pauseScreenButtons.add(backToPathwaysBut); pauseScreenButtons.add(restartBut);
 		pauseScreenButtons.add(helpBut); pauseScreenButtons.add(playBut);
 		
-		Button backtoMenuBut = new Button(144, 372, imageMap.get("backButton"), null, 0);
+		Button backtoMenuBut = new Button(144, 372, imageMap.get("smBackButton"), null, 0);
 		Button replayBut = new Button(310, 372,  imageMap.get("replay"), null, 20);
 		Button onwardsBut = new Button(467, 372,  imageMap.get("onwards"), null, 25);
 		missionButtons.add(replayBut); missionButtons.add(onwardsBut);
 		missionButtons.add(backtoMenuBut);
 		
+		Button gotItBut = new Button(467, 372, imageMap.get("gotitButton"), null, 1);
+		Button quitLevelBut = new Button(144, 372, imageMap.get("quitLevelButton"), null, 0);
+		tutorialButtons.add(gotItBut); tutorialButtons.add(quitLevelBut);
+		
+		Button gotItBut2 = new Button(467, 372, imageMap.get("gotitButton"), null, 30);
+		Button quitLevelBut2 = new Button(144, 372, imageMap.get("quitLevelButton"), null, 0);
+		helpButtons.add(gotItBut2); helpButtons.add(quitLevelBut2);
 		
 	}
 	
@@ -579,9 +592,9 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 				} catch (InterruptedException e) {}
 			} else if (simplifying) {
 				checkSimplificationProgress();	
-			} else if (!playing) {
+			} else {
 				repaint();
-			}		
+			}
 		}
 	}
 	
@@ -629,7 +642,6 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	    catch(ClassCastException ignored) {}
 	}
 
-	
 	@Override public void paint(final Graphics g) {
 		activateAntiAliasing(bufferGraphics);
 		drawBackground();
@@ -641,6 +653,8 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		drawCurrentBall();	
 		if (!playing) drawMenu();
 		if (pause) drawPauseScreen();
+		if (pause && help) drawHelpScreen();
+		if (tutorial && !playing) drawTutorialScreen();
 		if (pickDifficulty && !playing) drawDifficultyScreen();
 		if (playing) bufferGraphics.drawImage(imageMap.get("greyBorder"), 0, 0, this);
 		g.drawImage(offscreen, 0, 0, this);
@@ -658,6 +672,21 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		bufferGraphics.drawImage(imageMap.get("redPause"), 115, 155, this);
 		drawString(34, getTitleString(), new Point(144, 216));
 		drawButtonsFromList(pauseScreenButtons);
+	}
+	
+	private void drawHelpScreen() {
+		bufferGraphics.setColor(Color.BLACK);
+		bufferGraphics.drawRect(0, 0, width, height); bufferGraphics.fillRect(0, 0, width, height);
+		if (simplifying) bufferGraphics.drawImage(imageMap.get("tutorialPageTwo"), 115, 155, this);
+		else bufferGraphics.drawImage(imageMap.get("tutorialPageOne"), 115, 155, this);
+		drawButtonsFromList(helpButtons);
+	}
+	
+	private void drawTutorialScreen() {
+		bufferGraphics.setColor(Color.BLACK);
+		bufferGraphics.drawRect(0, 0, width, height); bufferGraphics.fillRect(0, 0, width, height);
+		bufferGraphics.drawImage(imageMap.get("tutorialPageOne"), 115, 155, this);
+		drawButtonsFromList(tutorialButtons);
 	}
 	
 	private void drawString(int fontSize, String string, Point position) {
@@ -732,8 +761,6 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		}
 	}
 	
-	private int interfaceNumber = 0;
-	
 	private void drawMenu() {
 		if (interfaceNumber == 0) {
 			bufferGraphics.drawImage(imageMap.get("missionBackground"), 0, 0, this);
@@ -798,10 +825,8 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 			Graphics2D g2d = (Graphics2D) bufferGraphics;
 			g2d.drawImage(imageMap.get("centerMolecule"), affineTransform, this);	
 		}
-		
-		int textHeight = 40;
-		int textWidth  = 40;
-		bufferGraphics.drawImage(centerTitle, 363 + textWidth/2, 263 + textHeight/2 + 5, this);
+
+		bufferGraphics.drawImage(centerTitle, 383, 288, this);
 	}
 	
 	private void drawMoleculesFromList(ArrayList<CurrentBall> currentBallList) {
@@ -814,8 +839,7 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	
 	private void drawArrowsFromList(ArrayList<CurrentBall> currentBallList) {
 		for (int i = 0; i < currentBallList.size(); i++) {
-			CurrentBall b = currentBallList.get(i);
-			b.paintArrow((Graphics2D) bufferGraphics, this);
+			currentBallList.get(i).paintArrow((Graphics2D) bufferGraphics, this);
 		}
 	}
 	
@@ -842,43 +866,25 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		return -100;
 	}
 	
-	public void start() {
-		
-	}
-	
-	public void stop() {
-		   
-	}
-	
 	@Override
 	public void keyPressed(KeyEvent evt) {
 		int key = evt.getKeyCode();
-		if (key == KeyEvent.VK_SPACE && !simplifying) {
+		if (key == KeyEvent.VK_SPACE && !simplifying && ballExistence) {
 			if (currentBall != null) {
 				eraserFired = true;
-				currentBall.getPosChange().x = 0;
-				currentBall.getPosChange().y = 0;
+				currentBall.setPosChange(0, 0);
 			}
-		}
-		if ((key == KeyEvent.VK_LEFT || key == KeyEvent.VK_UP) && !simplifying) {
+		} else if ((key == KeyEvent.VK_LEFT || key == KeyEvent.VK_UP) && !simplifying) {
 			rotation = (rotation + 7)%8;
 			rotate();
-		}
-		if (key == KeyEvent.VK_P && !simplifying) {
+		} else if (key == KeyEvent.VK_P && !simplifying) {
 			pause = !pause;
-		}
-		if (key == KeyEvent.VK_R) {
-			repaint();
-		}
-		if ((key == KeyEvent.VK_RIGHT || key == KeyEvent.VK_DOWN) && !simplifying) {
+		} else if ((key == KeyEvent.VK_RIGHT || key == KeyEvent.VK_DOWN) && !simplifying) {
 			rotation = (rotation + 1)%8;
-			rotate();
+			rotate();		
+		} else if (key == KeyEvent.VK_X) {
 			
-		}
-		if (key == KeyEvent.VK_X) {
-			
-		}
-		if (key == KeyEvent.VK_A) {
+		} else if (key == KeyEvent.VK_A) {
 			
 		}
 		repaint();
@@ -987,15 +993,6 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		}	
 	}
 	
-	@Override
-	public void keyReleased(KeyEvent arg0) {		
-	}
-
-	@Override
-	public void keyTyped(KeyEvent e) {
-		
-	}
-		
 	private void fireBall() {
 		ballExistence = true;
 		currentBall.setMove(setCannon);
@@ -1073,7 +1070,7 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 			}			
 			if (eraserFired && ballExistence) {
 				if (shooter.getBounds().intersects(currentBall.getBounds())) {
-					rotate();
+					currentBall.setPosChange(4, 4);
 					repaint();
 					getNextBall();
 				}
@@ -1122,13 +1119,10 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 				ballExistence = false;
 				rotateToPosition(4);
 				interfaceNumber = 12;
-				playing = false;
-				
+				playing = false;			
 			}
 		}
 	}
-	
-	
 	
 	private void setCurrentBallPosition() {
 		currentBall.setPosChange(4, 4);
@@ -1155,16 +1149,23 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	private void checkToSetUpLevel(MouseEvent arg0) {
 		if (pickDifficulty) {
 			checkIfButtonPressed(levelButtons, arg0.getPoint());
+		} else if (tutorial) { 
+			checkIfButtonPressed(tutorialButtons, arg0.getPoint());
 		} else if (pause) {
 			checkIfButtonPressed(pauseScreenButtons, arg0.getPoint());
+		} else if (help) {
+			checkIfButtonPressed(helpButtons, arg0.getPoint());
 		} else if (interfaceNumber == 0) {
 			checkIfButtonPressed(pathwayMissionButtons, arg0.getPoint());
 		} else if (interfaceNumber == 11) {
 			checkIfButtonPressed(chooseYourOwnAdventureButtons, arg0.getPoint());
 		} else if (interfaceNumber == 12) {
 			checkIfButtonPressed(missionButtons, arg0.getPoint());
-		}
-		
+		} else if (playing) {
+			if (new Rectangle(14, 548, 88, 42).contains(arg0.getPoint())) {
+				pause = !pause;
+			}
+		}	
 	}
 	
 	private void setUpInterfaceOrLevels(int number) {
@@ -1179,30 +1180,26 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 			pickDifficulty = true;
 		}
 		switch(number) {
-		case 0: interfaceNumber = 0; break;
-		case 10: break; //playTutorial 
-		case 11: interfaceNumber = 11; break;
-		case 15: pickDifficulty = false; break;
-		case 20: pickDifficulty = true; break;
+		case 0: pickDifficulty = false; tutorial = false; pause = false; playing = false; help = false; break;
+		case 10: tutorial = true; break;  
+		case 20: pickDifficulty = true; playing = false; break;
 		case 25: pickDifficulty = true; currentLevel++; break;
-		case 30: pause = false;
+		case 30: pause = false; help = false; break;
+		case 35: tutorial = true;
+		case 40: help = true;
 		}
 	}
 	
 	@Override
-	public void mouseEntered(MouseEvent arg0) {		
-	}
+	public void mouseEntered(MouseEvent arg0) {}
 	@Override
-	public void mouseExited(MouseEvent arg0) {
-		
-	}
+	public void mouseExited(MouseEvent arg0) {}
 	@Override
-	public void mousePressed(MouseEvent arg0) {
-		
-	}
+	public void mousePressed(MouseEvent arg0) {}
 	@Override
-	public void mouseReleased(MouseEvent arg0) {
-		
-	}
-	
+	public void mouseReleased(MouseEvent arg0) {}
+	@Override
+	public void keyReleased(KeyEvent arg0) {}
+	@Override
+	public void keyTyped(KeyEvent e) {}
 }

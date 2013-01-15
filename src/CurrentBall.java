@@ -42,7 +42,7 @@ public class CurrentBall {
 	}
 	
 	public void setPosChange(int x, int y) {
-		position = new Point(x, y);
+		posChange = new Point(x, y);
 	}
 	
 	public void setArrowImage(BufferedImage arrowImg) {
