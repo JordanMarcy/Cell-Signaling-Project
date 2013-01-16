@@ -13,6 +13,7 @@ public class CurrentBall {
 	private BufferedImage ballImage;
 	private BufferedImage arrowImage;
 	private BufferedImage nameImage;
+	private String arrowColor;
 	private ArrowType simplifyType;
 	
 	private int rotation;
@@ -24,16 +25,31 @@ public class CurrentBall {
 	public Point getArrowPosition() {return arrowPosition;}
 	public BufferedImage getBallImage() {return ballImage;}
 	public BufferedImage getNameImage() {return nameImage;}
+	public BufferedImage getArrowImage() {return arrowImage;}
 	public Rectangle getBounds() {return new Rectangle(position.x, position.y, ballImage.getWidth(null), ballImage.getHeight(null));}	
 	public ArrowType getSimplifyType() {return simplifyType;}
+	public String getArrowColor() {return arrowColor;}
+	public boolean isFlip() {return flip;}
 	
-	public CurrentBall(int strand, BufferedImage ballImage, BufferedImage nameImage, ArrowType simpleType, BufferedImage arrowImage, boolean flip) {
+	public CurrentBall(int strand, BufferedImage ballImage, BufferedImage nameImage, ArrowType simpleType, BufferedImage arrowImage, boolean flip, String color) {
 		this.strand = strand;
 		this.ballImage = ballImage;
 		this.nameImage = nameImage;
 		this.simplifyType = simpleType;
 		this.arrowImage = arrowImage;
 		this.flip = flip;
+		arrowColor = color;
+	}
+	
+	public CurrentBall(CurrentBall ball) {
+		this.strand = ball.getStrand();
+		this.ballImage = ball.getBallImage();
+		this.nameImage = ball.getNameImage();
+		this.simplifyType = ball.getSimplifyType();
+		this.arrowImage = ball.getArrowImage();
+		this.flip = ball.isFlip();
+		this.arrowColor = ball.getArrowColor();
+		this.position = ball.getPosition();
 	}
 	
 	public void setPos(int x, int y) {
@@ -52,6 +68,10 @@ public class CurrentBall {
 	public void setArrowPos(int x, int y) {
 		arrowPosition.x = x;
 		arrowPosition.y = y;
+	}
+	
+	public void setSimplifyType(ArrowType sType) {
+		simplifyType = sType;
 	}
 	
 	public void setMove(int type) {

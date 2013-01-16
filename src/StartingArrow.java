@@ -12,18 +12,29 @@ public class StartingArrow {
 	private boolean flip;
 	private BufferedImage arrowImage;
 	private ArrowType arrowType;
+	private String arrowColor;
 	
 	public Point getPosition() {return position;}
 	public int getStrand() {return strand;}
 	public BufferedImage getArrowImage() {return arrowImage;}
 	public ArrowType getArrowType() {return arrowType;}
 	public Rectangle getBounds() {return new Rectangle(position.x, position.y, arrowImage.getWidth(null), arrowImage.getHeight(null));}
-
-	public StartingArrow(int strand, boolean flip, BufferedImage imgs, ArrowType arrowType) {
+	public String getArrowColor() {return arrowColor;}
+	
+	public StartingArrow(int strand, boolean flip, BufferedImage imgs, ArrowType arrowType, String color) {
 		this.strand = strand;	
 		this.flip = flip;
 		arrowImage = imgs;
 		this.arrowType = arrowType;
+		arrowColor = color;
+	}
+	
+	public void setSimplifyType(ArrowType sType) {
+		arrowType = sType;
+	}
+	
+	public void setArrowImage(BufferedImage arrowImage) {
+		this.arrowImage = arrowImage;
 	}
 	
 	public void setPos(int x, int y) {
