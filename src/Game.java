@@ -16,39 +16,46 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	private static final long serialVersionUID = 1;	
 	private static final int width = 700, height = 600;
 	private Thread mainLoop;
-	private int countdown = 20;
+	private int countdown = 20; //timer that determines when balls are fired
 	
 	private Graphics bufferGraphics;
 	private Image offscreen;	
 	
+	//Keeps track of the image files
 	private HashMap<String, BufferedImage> imageMap = new HashMap<String, BufferedImage>();
 	private BufferedImage[] cannons = new BufferedImage[4];
 	private BufferedImage[] balls = new BufferedImage[5];
 	
 	private Font hosFont;
 	
-	private StartingArrow[] startingArrowStrand = new StartingArrow[4];
+	private StartingArrow[] startingArrowStrand = new StartingArrow[4]; //The arrows attached to the center molecule
 	private Shooter shooter = new Shooter();
-	private CurrentBall currentBall;
+	private CurrentBall firedBall;
 	
 	private Random generator = new Random();
 	private int currentLevel, difficulty, setCannon, strand;
-	private int numberOfMolecules[] = new int[4];
+	
+	private int numberOfMolecules[] = new int[4]; //Keeps track of the number of balls that will be in each strand
 	private int interfaceNumber = 0, rotation = 0, score = 0, progress = 0;
 	
 	private BufferedImage centerTitle;
-	private ArrayList<CurrentBall> listOne = new ArrayList<CurrentBall>();
+	
+	//Keeps track of the entire strands based on the level
+	private ArrayList<CurrentBall> listOne = new ArrayList<CurrentBall>(); 
 	private ArrayList<CurrentBall> listTwo = new ArrayList<CurrentBall>();
 	private ArrayList<CurrentBall> listThree = new ArrayList<CurrentBall>();
 	private ArrayList<CurrentBall> listFour = new ArrayList<CurrentBall>();
+	
+	//Allows for balls that don't belong to any strands at difficulty 3.
 	private ArrayList<CurrentBall> listFive = new ArrayList<CurrentBall>();
 	
+	//Keeps track of the balls that are connected to the center molecule
 	private ArrayList<CurrentBall> inPlayOne = new ArrayList<CurrentBall>();
 	private ArrayList<CurrentBall> inPlayTwo = new ArrayList<CurrentBall>();
 	private ArrayList<CurrentBall> inPlayThree = new ArrayList<CurrentBall>();
 	private ArrayList<CurrentBall> inPlayFour = new ArrayList<CurrentBall>();
 
-	
+	//Button lists for the game states.
 	private ArrayList<Button> chooseYourOwnAdventureButtons = new ArrayList<Button>();
 	private ArrayList<Button> pathwayMissionButtons = new ArrayList<Button>();
 	private ArrayList<Button> pauseScreenButtons = new ArrayList<Button>();
@@ -57,7 +64,7 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	private ArrayList<Button> tutorialButtons = new ArrayList<Button>();
 	private ArrayList<Button> helpButtons = new ArrayList<Button>();
 
-	
+	//Determine the game state
 	private boolean ballExistence = false, eraserFired = false, simplifying = false, finishedSimplifying = false;
 	private boolean pause = false, help = false, playing = false, gameOver = false;
 	private boolean pickDifficulty = false, tutorial = false;
@@ -75,7 +82,6 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		}
 		createButtons();
 		fillSimplificationArrays();
-		simplifying = false;
 		rotate();
 		addKeyListener(this);	
 		addMouseListener(this);
@@ -83,6 +89,7 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		mainLoop.start();	
 	}
 	
+	//Variables associated with the simplification portion of the game
 	private int simplificationStep = -1, simplificationStrand;
 	private ArrowType sType;
 	private boolean waitForUserToSimplify = false;
@@ -162,8 +169,8 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	//Moves the fired ball
 	private void moveCurrentBall() {
 		if (ballExistence) {
-			currentBall.move();
-			shooter.setxPos(currentBall.getPosition().x);
+			firedBall.move();
+			shooter.setxPos(firedBall.getPosition().x);
 		} 
 	}
 
@@ -186,6 +193,10 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	    catch(ClassCastException ignored) {}
 	}
 
+	
+	/* Uses double buffering to first draw all the images to bufferGraphics, and 
+	 * then to update the true Graphics, g.
+	 * */
 	@Override public void paint(final Graphics g) {
 		activateAntiAliasing(bufferGraphics);
 		drawBackground();
@@ -196,7 +207,7 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		if (!simplifying) drawEraser();
 		if (!simplifying) drawProgressBar();
 		if (finishedSimplifying) bufferGraphics.drawImage(imageMap.get("pathwaySimplified"), 191, 15, this);
-		drawCurrentBall();	
+		drawFiredBall();	
 		if (!playing) drawMenu();
 		if (pause) drawPauseScreen();
 		if (pause && help) drawHelpScreen();
@@ -206,24 +217,28 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		g.drawImage(offscreen, 0, 0, this);
 	}
 	
+	/* Goes through the inPlay arrayLists to see if they still need to be simplified.
+	 * If there are more than one balls in the arrayList, it will go through the simplification
+	 * process.
+	 */
 	private void checkSimplificationProgress() {
 		if (inPlayOne.size() > 1) {
-			rotateToPosition(2);
+			rotateToPosition(0);
 			cloneList(inPlayOne);
 			simplificationStrand = 0;
 			removeMoleculesToBeSimplified(inPlayOne);	
 		} else if (inPlayTwo.size() > 1) {
-			rotateToPosition(0);
+			rotateToPosition(6);
 			cloneList(inPlayTwo);
 			simplificationStrand = 1;
 			removeMoleculesToBeSimplified(inPlayTwo);
 		} else if (inPlayThree.size() > 1) {
-			rotateToPosition(6);
+			rotateToPosition(4);
 			cloneList(inPlayThree);
 			simplificationStrand = 2;
 			removeMoleculesToBeSimplified(inPlayThree);
 		} else if (inPlayFour.size() > 1) {
-			rotateToPosition(4);
+			rotateToPosition(2);
 			cloneList(inPlayFour);
 			simplificationStrand = 3;
 			removeMoleculesToBeSimplified(inPlayFour);
@@ -240,16 +255,16 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		}
 	}
 	
-	private void setUpInPlayListForSimplification(ArrayList<CurrentBall> inPlay) {
-		
-	}
-	
 	//Clones an arrayList; used to keep a copy of an inPlay arrayList before the simplification process
 	private void cloneList(ArrayList<CurrentBall> inPlay) {
 		simplificationList = new ArrayList<CurrentBall>();
 		for (CurrentBall ball:inPlay) simplificationList.add(new CurrentBall(ball));
 	}
 	
+	/* Removes the two balls from the inPlay arrayList that will be going through the simplification
+	 * process because their position will change independently of the other balls in their list because
+	 * of the simplification animation.
+	 */
 	private void removeMoleculesToBeSimplified(ArrayList<CurrentBall> inPlay) {
 		simplifyingMolecules[1] = inPlay.remove(inPlay.size()-1);
 		simplifyingMolecules[0] = inPlay.remove(inPlay.size()-1);
@@ -368,6 +383,8 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		repaint();
 	}
 	
+	/* Draws the simplification animation based on the simplificationStep.
+	 * */
 	private void drawSimplification() {
 		if (simplificationStep == -2) {
 			bufferGraphics.drawImage(strips[simplificationList.size()], 401, stripYPos[simplificationList.size()-1], this);
@@ -515,6 +532,11 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		}
 	}
 	
+	/* Checks to see if the inPlay arrayList has at least one ball in it.  If so,
+	 * the fired ball can be colored gray at high difficulties.  This is to minimize 
+	 * confusion when there could be multiple options for where a ball could be placed
+	 * on the central molecule.
+	 */
 	private boolean checkArrayNumber(int ballStrand) {
 		switch (ballStrand) {
 		case 0: if (inPlayOne.size() > 0) return true; else break;
@@ -525,11 +547,11 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		return false;
 	}
 	
-	private void drawCurrentBall() {
-		if (currentBall != null && !simplifying) {
-			if (difficulty > 1 && (checkArrayNumber(currentBall.getStrand()) || currentLevel > 3)) bufferGraphics.drawImage(balls[4], currentBall.getPosition().x, currentBall.getPosition().y, this);
-			else bufferGraphics.drawImage(currentBall.getBallImage(), currentBall.getPosition().x, currentBall.getPosition().y, this);
-			bufferGraphics.drawImage(currentBall.getNameImage(), currentBall.getPosition().x + 24 - currentBall.getNameImage().getWidth()/2, currentBall.getPosition().y + 24 - currentBall.getNameImage().getHeight()/2, this);
+	private void drawFiredBall() {
+		if (firedBall != null && !simplifying) {
+			if (difficulty > 1 && (checkArrayNumber(firedBall.getStrand()) || currentLevel > 3)) bufferGraphics.drawImage(balls[4], firedBall.getPosition().x, firedBall.getPosition().y, this);
+			else bufferGraphics.drawImage(firedBall.getBallImage(), firedBall.getPosition().x, firedBall.getPosition().y, this);
+			bufferGraphics.drawImage(firedBall.getNameImage(), firedBall.getPosition().x + 24 - firedBall.getNameImage().getWidth()/2, firedBall.getPosition().y + 24 - firedBall.getNameImage().getHeight()/2, this);
 		}
 	}
 	
@@ -554,9 +576,9 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		bufferGraphics.drawImage(centerTitle, 383, 288, this);
 	}
 	
-	private void drawMoleculesFromList(ArrayList<CurrentBall> currentBallList) {
-		for (int i = 0; i < currentBallList.size(); i++) {
-			CurrentBall b = currentBallList.get(i);
+	private void drawMoleculesFromList(ArrayList<CurrentBall> inPlay) {
+		for (int i = 0; i < inPlay.size(); i++) {
+			CurrentBall b = inPlay.get(i);
 			bufferGraphics.drawImage(b.getBallImage(), b.getPosition().x, b.getPosition().y, this);
 			bufferGraphics.drawImage(b.getNameImage(), b.getPosition().x + 24 - b.getNameImage().getWidth()/2, b.getPosition().y + 24 - b.getNameImage().getHeight()/2, this);
 		}
@@ -598,9 +620,9 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	public void keyPressed(KeyEvent evt) {
 		int key = evt.getKeyCode();
 		if (key == KeyEvent.VK_SPACE && !simplifying && ballExistence) {
-			if (currentBall != null) {
+			if (firedBall != null) {
 				eraserFired = true;
-				currentBall.setPosChange(0, 0);
+				firedBall.setPosChange(0, 0);
 			}
 		} else if ((key == KeyEvent.VK_LEFT || key == KeyEvent.VK_UP) && !simplifying) {
 			rotation = (rotation + 7)%8;
@@ -649,42 +671,42 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	 * and startingPosition of the arrow.
 	 * */
 	private void setStartingArrowPosition(StartingArrow strandArrow, int startingPosition) {
-		if ((rotation+startingPosition)%8 == 2) {
+		if ((rotation+startingPosition)%8 == 0) {
 			strandArrow.setPos(414, 273);
-			strandArrow.setImage(0);
+			strandArrow.setImage((rotation+startingPosition)%8);
+		}
+		if ((rotation+startingPosition)%8 == 1) {
+			strandArrow.setPos(424, 292);
+			strandArrow.setImage((rotation+startingPosition)%8);
+
+		}
+		if ((rotation+startingPosition)%8 == 2) {
+			strandArrow.setPos(414, 314);
+			strandArrow.setImage((rotation+startingPosition)%8);
+	
 		}
 		if ((rotation+startingPosition)%8 == 3) {
-			strandArrow.setPos(424, 292);
-			strandArrow.setImage(1);
+			strandArrow.setPos(392, 325);
+			strandArrow.setImage((rotation+startingPosition)%8);
 
 		}
 		if ((rotation+startingPosition)%8 == 4) {
-			strandArrow.setPos(414, 314);
-			strandArrow.setImage(2);
-	
+			strandArrow.setPos(372, 314);
+			strandArrow.setImage((rotation+startingPosition)%8);	
 		}
 		if ((rotation+startingPosition)%8 == 5) {
-			strandArrow.setPos(392, 325);
-			strandArrow.setImage(3);
-
+			strandArrow.setPos(360, 292);
+			strandArrow.setImage((rotation+startingPosition)%8);
+			
 		}
 		if ((rotation+startingPosition)%8 == 6) {
-			strandArrow.setPos(372, 314);
-			strandArrow.setImage(4);	
+			strandArrow.setPos(372, 273);
+			strandArrow.setImage((rotation+startingPosition)%8);
+			
 		}
 		if ((rotation+startingPosition)%8 == 7) {
-			strandArrow.setPos(360, 292);
-			strandArrow.setImage(5);
-			
-		}
-		if ((rotation+startingPosition)%8 == 0) {
-			strandArrow.setPos(372, 273);
-			strandArrow.setImage(6);
-			
-		}
-		if ((rotation+startingPosition)%8 == 1) {
 			strandArrow.setPos(392, 264);
-			strandArrow.setImage(7);
+			strandArrow.setImage((rotation+startingPosition)%8);
 		}
 
 	}
@@ -694,44 +716,44 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	 * of the arrowImages, and other slight quirks.
 	 * */
 	private void setBallPosition(int i, int change, CurrentBall b) {
-		if ((rotation+change)%8 == 2) {
+		if ((rotation+change)%8 == 0) {
 			b.setPos(416 + 37*i, 239 - 37*i);
-			b.setImage(0);
+			b.setArrowImageRotation((rotation+change)%8);
 			b.setArrowPos(b.getPosition().x + 35, b.getPosition().y - 2);
 		}
-		if ((rotation+change)%8 == 3) {
+		if ((rotation+change)%8 == 1) {
 			b.setPos(434 + 52*i, 277);
-			b.setImage(1);
+			b.setArrowImageRotation((rotation+change)%8);
 			b.setArrowPos(b.getPosition().x + 42, b.getPosition().y + 15);
 		}
-		if ((rotation+change)%8 == 4) {
+		if ((rotation+change)%8 == 2) {
 			b.setPos(418 + 37*i, 316 + 37*i);
-			b.setImage(2);
+			b.setArrowImageRotation((rotation+change)%8);
 			b.setArrowPos(b.getPosition().x + 33, b.getPosition().y + 34);
 		}
-		if ((rotation+change)%8 == 5) {
+		if ((rotation+change)%8 == 3) {
 			b.setPos(377, 334 + 52*i);
-			b.setImage(3);
+			b.setArrowImageRotation((rotation+change)%8);
 			b.setArrowPos(b.getPosition().x + 15, b.getPosition().y + 42);
 		}
-		if ((rotation+change)%8 == 6) {
+		if ((rotation+change)%8 == 4) {
 			b.setPos(335 - 37*i, 315 + 37*i);
-			b.setImage(4);
+			b.setArrowImageRotation((rotation+change)%8);
 			b.setArrowPos(b.getPosition().x - 2, b.getPosition().y + 33);
 		}
-		if ((rotation+change)%8 == 7) {
+		if ((rotation+change)%8 == 5) {
 			b.setPos(320 - 52*i, 277);
-			b.setImage(5);
+			b.setArrowImageRotation((rotation+change)%8);
 			b.setArrowPos(b.getPosition().x - 10, b.getPosition().y + 15);
 		}
-		if ((rotation+change)%8 == 0) {
+		if ((rotation+change)%8 == 6) {
 			b.setPos(338 - 37*i, 236 - 37*i);
-			b.setImage(6);
+			b.setArrowImageRotation((rotation+change)%8);
 			b.setArrowPos(b.getPosition().x - 3, b.getPosition().y - 3);
 		}
-		if ((rotation+change)%8 == 1) {
+		if ((rotation+change)%8 == 7) {
 			b.setPos(377, 220 - 52*i);
-			b.setImage(7);
+			b.setArrowImageRotation((rotation+change)%8);
 			b.setArrowPos(b.getPosition().x + 15, b.getPosition().y - 10);
 		}	
 	}
@@ -739,16 +761,16 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	//Makes the ball, currently in the cannon, start moving.
 	private void fireBall() {
 		ballExistence = true;
-		currentBall.setMove(setCannon);
+		firedBall.setMove(setCannon);
 	}
 	
 	//Adds a ball to the corresponding inPlay array, meaning it's now attached to the strand in game.
 	private void increaseArray() {
 		switch(strand) {
-		case 0: inPlayOne.add(currentBall); break; 
-		case 1: inPlayTwo.add(currentBall); break;
-		case 2: inPlayThree.add(currentBall); break;
-		case 3: inPlayFour.add(currentBall); break;
+		case 0: inPlayOne.add(firedBall); break; 
+		case 1: inPlayTwo.add(firedBall); break;
+		case 2: inPlayThree.add(firedBall); break;
+		case 3: inPlayFour.add(firedBall); break;
 		}
 	}
 	
@@ -766,10 +788,10 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	//Otherwise, the fired ball will drop from the screen, and the ball it hit will be removed.
 	private void checkPreviousBall(Rectangle prevRect, Rectangle ballRec, CurrentBall previousBall) {
 		if (ballRec.intersects(prevRect)) {
-			if (previousBall.getStrand() != currentBall.getStrand()) {
+			if (previousBall.getStrand() != firedBall.getStrand()) {
 				decreaseArray(previousBall);
 				progress--;
-				currentBall.setPosChange(0, 10);
+				firedBall.setPosChange(0, 10);
 			} else {
 				if (progress < 11) progress++;
 				score += 50;
@@ -786,9 +808,9 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	 */
 	private void checkStartingArrow(Rectangle arrowRect, Rectangle ballRec, int arrowStrand) {
 		if (ballRec.intersects(arrowRect)) {
-			if (currentBall.getStrand() != arrowStrand) {
-				currentBall.setPosChange(0, 10);
-			} else if (currentBall.getPosChange().y != 10) {
+			if (firedBall.getStrand() != arrowStrand) {
+				firedBall.setPosChange(0, 10);
+			} else if (firedBall.getPosChange().y != 10) {
 				if (progress < 11) progress++;
 				score += 25;
 				increaseArray();
@@ -807,16 +829,16 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		if (inPlay.size() > 0) {
 			CurrentBall previousBall = inPlay.get(inPlay.size()-1);
 			Rectangle prevRect = new Rectangle(previousBall.getPosition().x, previousBall.getPosition().y, 35, 35);
-			checkPreviousBall(prevRect, currentBall.getBounds(), previousBall);
+			checkPreviousBall(prevRect, firedBall.getBounds(), previousBall);
 		} else if (startingArrowStrand[strandNum] != null){
 			Rectangle startingArrowRect = startingArrowStrand[strandNum].getBounds();
-			checkStartingArrow(currentBall.getBounds(), startingArrowRect, strandNum);
+			checkStartingArrow(firedBall.getBounds(), startingArrowRect, strandNum);
 		}
 	}
 	
 	// This checks collisions between the ball being fired and the strands already in play, the eraser, and the centerMolecule.
 	private void checkCollisions() {		
-		if (ballExistence && currentBall.getPosChange().y != 10) {
+		if (ballExistence && firedBall.getPosChange().y != 10) {
 			if (ballExistence && rotation % 2 == 0) {
 				checkLastInStrandCollision(inPlayOne, 0);
 				checkLastInStrandCollision(inPlayTwo, 1);
@@ -824,17 +846,17 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 				checkLastInStrandCollision(inPlayFour, 3);				
 			}			
 			if (eraserFired && ballExistence) {
-				if (shooter.getBounds().intersects(currentBall.getBounds())) {
-					currentBall.setPosChange(4, 4);
+				if (shooter.getBounds().intersects(firedBall.getBounds())) {
+					firedBall.setPosChange(4, 4);
 					repaint();
 					getNextBall();
 				}
 			}
 			Rectangle centerRect = new Rectangle(373, 272, imageMap.get("centerMolecule").getWidth(null) - 20, imageMap.get("centerMolecule").getHeight(null) - 20);
-			if (centerRect.intersects(currentBall.getBounds())) getNextBall();
+			if (centerRect.intersects(firedBall.getBounds())) getNextBall();
 		}
 		if (ballExistence) {
-			if (currentBall.getPosition().y > 680 || currentBall.getPosition().y < 10) {
+			if (firedBall.getPosition().y > 680 || firedBall.getPosition().y < 10) {
 				getNextBall();
 			}
 		}
@@ -863,15 +885,15 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 			}
 			
 			switch (strand) {
-			case 0: if (inPlayOne.size() < numberOfMolecules[0]) {currentBall = listOne.get(inPlayOne.size()); newBall = true;} 
+			case 0: if (inPlayOne.size() < numberOfMolecules[0]) {firedBall = listOne.get(inPlayOne.size()); newBall = true;} 
 				break;
-			case 1: if (inPlayTwo.size() < numberOfMolecules[1]) {currentBall = listTwo.get(inPlayTwo.size()); newBall = true;}
+			case 1: if (inPlayTwo.size() < numberOfMolecules[1]) {firedBall = listTwo.get(inPlayTwo.size()); newBall = true;}
 				break;
-			case 2: if (inPlayThree.size() < numberOfMolecules[2]) {currentBall = listThree.get(inPlayThree.size()); newBall = true;}
+			case 2: if (inPlayThree.size() < numberOfMolecules[2]) {firedBall = listThree.get(inPlayThree.size()); newBall = true;}
 				break;
-			case 3: if (inPlayFour.size() < numberOfMolecules[3]) {currentBall = listFour.get(inPlayFour.size()); newBall = true;}
+			case 3: if (inPlayFour.size() < numberOfMolecules[3]) {firedBall = listFour.get(inPlayFour.size()); newBall = true;}
 				break;
-			case 4: currentBall = listFive.get(0); newBall = true; break;
+			case 4: firedBall = listFive.get(0); newBall = true; break;
 			}
 			
 			if (newBall) {
@@ -888,12 +910,12 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	
 	//Sets the ball position to the starting position for the cannon it's set as.
 	private void setCurrentBallStartingPosition() {
-		currentBall.setPosChange(4, 4);
+		firedBall.setPosChange(4, 4);
 		switch (setCannon) {
-		case 0: currentBall.setPos(118, 18); break;
-		case 1: currentBall.setPos(635, 18); break;
-		case 2: currentBall.setPos(635, 535); break;
-		case 3: currentBall.setPos(118, 535); break;
+		case 0: firedBall.setPos(118, 18); break;
+		case 1: firedBall.setPos(635, 18); break;
+		case 2: firedBall.setPos(635, 535); break;
+		case 3: firedBall.setPos(118, 535); break;
 		}
 	}
 	
