@@ -25,13 +25,10 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	private BufferedImage[] cannons = new BufferedImage[4];
 	private BufferedImage[] balls = new BufferedImage[5];
 	
-	
-
-	
 	private Font hosFont;
 	
 	private StartingArrow[] startingArrowStrand = new StartingArrow[4];
-	private Shooter shooter;
+	private Shooter shooter = new Shooter();
 	private CurrentBall currentBall;
 	
 	private Random generator = new Random();
@@ -70,13 +67,7 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		offscreen = createImage(width, height);
 		bufferGraphics = offscreen.getGraphics();
 		setBackground(Color.WHITE);
-		try {
-			hosFont = Font.createFont(Font.TRUETYPE_FONT, new File("handsean.ttf"));
-		} catch (FontFormatException e1) {
-			e1.printStackTrace();
-		} catch (IOException e1) {
-			e1.printStackTrace();
-		}
+		hosFont = new Font("Dialog", Font.PLAIN, 34);
 		try {
 			getImages();
 		} catch (IOException e) {
@@ -84,14 +75,12 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		}
 		createButtons();
 		fillSimplificationArrays();
-		shooter = new Shooter();
 		simplifying = false;
 		rotate();
 		addKeyListener(this);	
 		addMouseListener(this);
 		mainLoop = new Thread(this);
-		mainLoop.start();
-		
+		mainLoop.start();	
 	}
 	
 	private int simplificationStep = -1, simplificationStrand;
@@ -110,24 +99,893 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 	private int[] overMolBXPos = new int[4], overMolBYPos = new int[4];
 	private int[] EMXPos = new int[4], EMYPos = new int[4];
 	
-	private void fillSimplificationArrays() {
-		for (int i = 0; i < 4; i++) {
-			ripAXPos[i] = 416 + 37*i;
-			ripAYPos[i] = 188 - 37*i;
-			ripBXPos[i] = 408 + 37*i;
-			ripBYPos[i] = 206 - 37*i;
-			overArrowAXPos[i] = 431 + 37*i;
-			overArrowAYPos[i] = 243 - 37*i;
-			overMolAXPos[i] = 436 + 37*i;
-			overMolAYPos[i] = 202 - 37*i;
-			overArrowBXPos[i] = 424 + 37*i;
-			overArrowBYPos[i] = 262 - 37*i;
-			overMolBXPos[i] = 429 + 37*i;
-			overMolBYPos[i] = 224 - 37*i;
-			EMXPos[i] = 408 + 37*i;
-			EMYPos[i] = 258 - 37*i;
+	public void update(Graphics g) {
+		paint(g);
+	}
+			
+	@Override
+	public void run() {
+		while(!gameOver) {
+			if (!pause && playing && currentLevel > 0 && !simplifying) {
+				rotate();
+				moveEraser();
+				moveCurrentBall();
+				setCountdown();
+				checkCollisions();
+				repaint();
+				try {
+					Thread.sleep(45);
+				} catch (InterruptedException e) {}
+			} else if (simplifying) {
+				rotate();
+				if (simplificationStep == 3) {
+					repaint();
+					try {
+						Thread.sleep(2000);
+					} catch (InterruptedException e) {}
+					updateLists();
+				}
+				if (simplificationStep == -2) {
+					simplificationStep = -1;
+					checkSimplificationProgress();
+				}
+			} else {
+				rotate();
+				repaint();
+			}
 		}
 	}
+	
+	//The countdown until the next ball is fired.
+	private void setCountdown() {
+		if (!ballExistence) countdown--;
+		if (countdown == 0) {
+			fireBall();
+			countdown = 20;
+		}
+	}
+	
+	
+	/* If user has fired the eraser it will move the eraser up towards the ball.
+	 * Once the eraser has gone beyond the screen it resets.
+	 */
+	private void moveEraser() {
+		if (eraserFired) {
+			shooter.moveUp();
+		}
+		if (shooter.getPos().y < -70) {
+			eraserFired = false;
+			shooter.setyPos();
+		}
+	}
+	
+	//Moves the fired ball
+	private void moveCurrentBall() {
+		if (ballExistence) {
+			currentBall.move();
+			shooter.setxPos(currentBall.getPosition().x);
+		} 
+	}
+
+	static void activateAntiAliasing(Graphics g) {
+	    try {
+	        Graphics2D g2d = (Graphics2D)g;
+
+	        // for antialiasing geometric shapes
+	        g2d.setRenderingHint( RenderingHints.KEY_ANTIALIASING,
+	                              RenderingHints.VALUE_ANTIALIAS_ON );
+
+	        // for antialiasing text
+	        g2d.setRenderingHint( RenderingHints.KEY_TEXT_ANTIALIASING,
+	                              RenderingHints.VALUE_TEXT_ANTIALIAS_ON );
+
+	        // to go for quality over speed
+	        g2d.setRenderingHint( RenderingHints.KEY_RENDERING,
+	                              RenderingHints.VALUE_RENDER_QUALITY );
+	    }
+	    catch(ClassCastException ignored) {}
+	}
+
+	@Override public void paint(final Graphics g) {
+		activateAntiAliasing(bufferGraphics);
+		drawBackground();
+		drawCentralMolecule();
+		drawMoleculesInPlay();
+		drawSimplification();
+		if (!simplifying) drawCannons();
+		if (!simplifying) drawEraser();
+		if (!simplifying) drawProgressBar();
+		if (finishedSimplifying) bufferGraphics.drawImage(imageMap.get("pathwaySimplified"), 191, 15, this);
+		drawCurrentBall();	
+		if (!playing) drawMenu();
+		if (pause) drawPauseScreen();
+		if (pause && help) drawHelpScreen();
+		if (tutorial && !playing) drawTutorialScreen();
+		if (pickDifficulty && !playing) drawDifficultyScreen();
+		if (playing) bufferGraphics.drawImage(imageMap.get("greyBorder"), 0, 0, this);
+		g.drawImage(offscreen, 0, 0, this);
+	}
+	
+	private void checkSimplificationProgress() {
+		if (inPlayOne.size() > 1) {
+			rotateToPosition(2);
+			cloneList(inPlayOne);
+			simplificationStrand = 0;
+			removeMoleculesToBeSimplified(inPlayOne);	
+		} else if (inPlayTwo.size() > 1) {
+			rotateToPosition(0);
+			cloneList(inPlayTwo);
+			simplificationStrand = 1;
+			removeMoleculesToBeSimplified(inPlayTwo);
+		} else if (inPlayThree.size() > 1) {
+			rotateToPosition(6);
+			cloneList(inPlayThree);
+			simplificationStrand = 2;
+			removeMoleculesToBeSimplified(inPlayThree);
+		} else if (inPlayFour.size() > 1) {
+			rotateToPosition(4);
+			cloneList(inPlayFour);
+			simplificationStrand = 3;
+			removeMoleculesToBeSimplified(inPlayFour);
+		} else {
+			finishedSimplifying = true;
+			rotate();
+			repaint();
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {}
+			simplifying = false;
+			interfaceNumber = 12;
+			playing = false;
+		}
+	}
+	
+	private void setUpInPlayListForSimplification(ArrayList<CurrentBall> inPlay) {
+		
+	}
+	
+	//Clones an arrayList; used to keep a copy of an inPlay arrayList before the simplification process
+	private void cloneList(ArrayList<CurrentBall> inPlay) {
+		simplificationList = new ArrayList<CurrentBall>();
+		for (CurrentBall ball:inPlay) simplificationList.add(new CurrentBall(ball));
+	}
+	
+	private void removeMoleculesToBeSimplified(ArrayList<CurrentBall> inPlay) {
+		simplifyingMolecules[1] = inPlay.remove(inPlay.size()-1);
+		simplifyingMolecules[0] = inPlay.remove(inPlay.size()-1);
+		setUpSimplification();
+	}
+	
+	//Plays the animation that rotates the molecule complex to the desired position.
+	private void rotateToPosition(int position) {
+		while (rotation != position) {
+			try {
+				Thread.sleep(200);
+			} catch (InterruptedException e) {}
+			if (rotation > position) rotation--;
+			else rotation++;
+			rotate();
+			repaint();
+		}
+	}
+	
+	/* This plays the folding animation of the simplification step and then waits for the user
+	 * to input how the strand should simplify.
+	 */
+	private void setUpSimplification() {
+		simplificationStep = 0;
+		repaint();
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {}
+		simplificationStep++;
+		repaint();
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {}
+		simplificationStep++;
+		repaint();
+		waitForUserToSimplify = true;
+	}
+	
+	
+	/* Checks to see if the user simplified correctly, looking at the rules of simplification and what the user inputed
+	 * The user pressed 'A' to change the two arrows to an Activation arrow, or 'X' to change them to an Inhibition arrow.
+	 * */
+	private void tryToSimplify() {
+		ArrowType atOne, atTwo;
+		if (simplificationList.size() > 2) atOne = simplificationList.get(simplificationList.size()-3).getSimplifyType();
+		else atOne = startingArrowStrand[simplificationStrand].getArrowType();
+		atTwo = simplifyingMolecules[0].getSimplifyType();
+		if ((atOne == ArrowType.ACTIVATE && atTwo == ArrowType.ACTIVATE) || (atOne == ArrowType.INHIBIT && atTwo == ArrowType.INHIBIT)) {
+			if (sType == ArrowType.ACTIVATE) {
+				simplifySuccess();
+			} else {
+				failureToSimplifyCorrectly();
+			}
+		}
+		if ((atOne == ArrowType.ACTIVATE && atTwo == ArrowType.INHIBIT) || (atOne == ArrowType.INHIBIT && atTwo == ArrowType.ACTIVATE)) {
+			if (sType == ArrowType.INHIBIT) {
+				simplifySuccess();
+			} else {
+				failureToSimplifyCorrectly();
+			}
+		}
+	}
+	
+	/* If the user correctly chooses the right simplification, the simplificationStep is set to 3, so that 
+	 * the game will know to draw the eraserMark and update the ArrayLists.
+	 * */
+	private void simplifySuccess() {
+		waitForUserToSimplify = false;
+		simplificationStep = 3;
+	}
+	
+	/* If the user correctly simplifies the strand, the arrayList must be updated to show the change in
+	 * balls and arrow types.  The simplificationList, which holds the saved copy of the current strand 
+	 * will be changed to reflect these changes, based on the rules of simplification, and then the inPlay 
+	 * arrayList will be set to this updated simplificationList.
+	 * */
+	private void updateLists() {
+		if (simplificationList.size() > 2) {
+			simplificationList.get(simplificationList.size()-3).setSimplifyType(sType);
+			if (sType == ArrowType.ACTIVATE) {
+				String arrowImageString = simplificationList.get(simplificationList.size()-3).getArrowColor() + "Arrow";
+				simplificationList.get(simplificationList.size()-3).setArrowImage(imageMap.get(arrowImageString));
+			} else {
+				String arrowImageString = simplificationList.get(simplificationList.size()-3).getArrowColor() + "Inhibitor";
+				simplificationList.get(simplificationList.size()-3).setArrowImage(imageMap.get(arrowImageString));
+			}
+		} else {
+			startingArrowStrand[simplificationStrand].setSimplifyType(sType);
+			if (sType == ArrowType.ACTIVATE) startingArrowStrand[simplificationStrand].setArrowImage(imageMap.get(startingArrowStrand[simplificationStrand].getArrowColor() + "Arrow"));
+			else startingArrowStrand[simplificationStrand].setArrowImage(imageMap.get(startingArrowStrand[simplificationStrand].getArrowColor() + "Inhibitor"));
+		}
+		simplificationList.remove(simplificationList.size()-2);
+		switch(simplificationStrand) {
+		case 0: inPlayOne = simplificationList; break;
+		case 1: inPlayTwo = simplificationList; break;
+		case 2: inPlayThree = simplificationList; break;
+		case 3:	inPlayFour = simplificationList; break;
+		}
+		simplificationStep = -2;
+		rotate();
+	}
+	
+	/* If the user chooses the wrong simplification, the arrayList reverts back to what is was before, which was
+	 * saved by the simplificationList.
+	 * */
+	private void failureToSimplifyCorrectly() {
+		switch(simplificationStrand) {
+		case 0: inPlayOne = simplificationList; break;
+		case 1: inPlayTwo = simplificationList; break;
+		case 2: inPlayThree = simplificationList; break;
+		case 3:	inPlayFour = simplificationList; break;
+		}
+		rotate();
+		waitForUserToSimplify = false;
+		simplificationStep = -2;
+		repaint();
+	}
+	
+	private void drawSimplification() {
+		if (simplificationStep == -2) {
+			bufferGraphics.drawImage(strips[simplificationList.size()], 401, stripYPos[simplificationList.size()-1], this);
+		}
+		if (simplificationStep == 0) {
+			bufferGraphics.drawImage(strips[simplificationList.size()-1], 401, stripYPos[simplificationList.size()-1], this);
+			bufferGraphics.drawImage(simplifyingMolecules[0].getBallImage(), simplifyingMolecules[0].getPosition().x, simplifyingMolecules[0].getPosition().y, this);
+			bufferGraphics.drawImage(simplifyingMolecules[0].getNameImage(), 
+									 simplifyingMolecules[0].getPosition().x + 24 - simplifyingMolecules[0].getNameImage().getWidth()/2, 
+									 simplifyingMolecules[0].getPosition().y + 24 - simplifyingMolecules[0].getNameImage().getHeight()/2, this);
+			bufferGraphics.drawImage(simplifyingMolecules[1].getBallImage(), simplifyingMolecules[1].getPosition().x, simplifyingMolecules[1].getPosition().y, this);
+			bufferGraphics.drawImage(simplifyingMolecules[1].getNameImage(), 
+									 simplifyingMolecules[1].getPosition().x + 24 - simplifyingMolecules[1].getNameImage().getWidth()/2, 
+									 simplifyingMolecules[1].getPosition().y + 24 - simplifyingMolecules[1].getNameImage().getHeight()/2, this);
+			simplifyingMolecules[0].paintArrow((Graphics2D) bufferGraphics, this);
+		} else if (simplificationStep == 1) {
+			bufferGraphics.drawImage(strips[simplificationList.size()-2], 401, stripYPos[simplificationList.size()-2], this);
+			simplifyingMolecules[0].setArrowPos(overArrowAXPos[simplificationList.size()-2], overArrowAYPos[simplificationList.size()-2]);
+			bufferGraphics.drawImage(simplifyingMolecules[0].getBallImage(), simplifyingMolecules[0].getPosition().x, simplifyingMolecules[0].getPosition().y, this);
+			bufferGraphics.drawImage(simplifyingMolecules[0].getNameImage(), 
+									 simplifyingMolecules[0].getPosition().x + 24 - simplifyingMolecules[0].getNameImage().getWidth()/2, 
+									 simplifyingMolecules[0].getPosition().y + 24 - simplifyingMolecules[0].getNameImage().getHeight()/2, this);
+			bufferGraphics.drawImage(rips[0], ripAXPos[simplificationList.size()-2], ripAYPos[simplificationList.size()-2], this);
+			bufferGraphics.drawImage(simplifyingMolecules[1].getBallImage(), overMolAXPos[simplificationList.size()-2], overMolAYPos[simplificationList.size()-2], this);
+			bufferGraphics.drawImage(simplifyingMolecules[1].getNameImage(), 
+								     overMolAXPos[simplificationList.size()-2] + 24 - simplifyingMolecules[1].getNameImage().getWidth()/2, 
+								     overMolAYPos[simplificationList.size()-2] + 24 - simplifyingMolecules[1].getNameImage().getHeight()/2, this);
+			simplifyingMolecules[0].paintArrow((Graphics2D) bufferGraphics, this);
+		} else if (simplificationStep == 2 || simplificationStep == 3) {
+			bufferGraphics.drawImage(strips[simplificationList.size()-2], 401, stripYPos[simplificationList.size()-2], this);
+			simplifyingMolecules[0].setArrowPos(overArrowBXPos[simplificationList.size()-2], overArrowBYPos[simplificationList.size()-2]);
+			bufferGraphics.drawImage(rips[1], ripBXPos[simplificationList.size()-2], ripBYPos[simplificationList.size()-2], this);
+			bufferGraphics.drawImage(simplifyingMolecules[1].getBallImage(), overMolBXPos[simplificationList.size()-2], overMolBYPos[simplificationList.size()-2], this);
+			bufferGraphics.drawImage(simplifyingMolecules[1].getNameImage(), 
+								     overMolBXPos[simplificationList.size()-2] + 24 - simplifyingMolecules[1].getNameImage().getWidth()/2, 
+								     overMolBYPos[simplificationList.size()-2] + 24 - simplifyingMolecules[1].getNameImage().getHeight()/2, this);
+			simplifyingMolecules[0].paintArrow((Graphics2D) bufferGraphics, this);
+		}
+		if (simplificationStep == 3) {
+			bufferGraphics.drawImage(imageMap.get("eraserMark"), EMXPos[simplificationList.size()-2], EMYPos[simplificationList.size()-2], this);
+		}
+	}
+	
+	private void drawDifficultyScreen() {
+		bufferGraphics.setColor(Color.BLACK);
+		bufferGraphics.drawRect(0, 0, width, height); bufferGraphics.fillRect(0, 0, width, height);
+		bufferGraphics.drawImage(imageMap.get("redPause"), 115, 155, this);
+		drawString(34, "Pick Difficulty", new Point(144, 216));
+		drawButtonsFromList(levelButtons);		
+	}
+	
+	private void drawPauseScreen() {
+		bufferGraphics.drawImage(imageMap.get("redPause"), 115, 155, this);
+		drawString(34, getTitleString(), new Point(144, 216));
+		drawButtonsFromList(pauseScreenButtons);
+	}
+	
+	private void drawHelpScreen() {
+		bufferGraphics.setColor(Color.BLACK);
+		bufferGraphics.drawRect(0, 0, width, height); bufferGraphics.fillRect(0, 0, width, height);
+		if (simplifying) bufferGraphics.drawImage(imageMap.get("tutorialPageTwo"), 115, 155, this);
+		else bufferGraphics.drawImage(imageMap.get("tutorialPageOne"), 115, 155, this);
+		drawButtonsFromList(helpButtons);
+	}
+	
+	private void drawTutorialScreen() {
+		bufferGraphics.setColor(Color.BLACK);
+		bufferGraphics.drawRect(0, 0, width, height); bufferGraphics.fillRect(0, 0, width, height);
+		bufferGraphics.drawImage(imageMap.get("tutorialPageOne"), 115, 155, this);
+		drawButtonsFromList(tutorialButtons);
+	}
+	
+	private void drawString(int fontSize, String string, Point position) {
+		hosFont = hosFont.deriveFont(fontSize);
+		bufferGraphics.setFont(hosFont);
+		bufferGraphics.setColor(new Color(51, 51, 51));
+		bufferGraphics.drawString(string, position.x, position.y);
+	}
+	
+	private String getTitleString() {
+		switch(currentLevel) {
+		case 1: return "APC"; 
+		case 2: return "S-Cdk"; 
+		case 3: return "p53"; 
+		case 4: return "Delta-Notch"; 
+		case 5: return "TGF-Beta"; 
+		case 6: return "Hedgehog"; 
+		case 7: return "Wnt"; 
+		}
+		return "";
+	}
+	
+	private void drawBackground() {
+		bufferGraphics.drawImage(imageMap.get("background"), 0, 0, this);
+		if (pause) {
+			bufferGraphics.drawImage(imageMap.get("pauseButtonPressed"), 14, 548, this);
+		} else { 
+			bufferGraphics.drawImage(imageMap.get("pauseButton"), 14, 548, this);
+		}
+		hosFont = hosFont.deriveFont(34.0f);
+		bufferGraphics.setFont(hosFont);
+		FontMetrics fontMetrics = bufferGraphics.getFontMetrics(hosFont);
+		bufferGraphics.setColor(Color.RED);
+		bufferGraphics.drawString("" + score, 95 - fontMetrics.stringWidth("" + score), 94);
+	}
+	
+	private void drawEraser() {	
+		Point p = shooter.getPos();
+		bufferGraphics.drawImage( imageMap.get("shooterImg"), p.x, p.y, this);
+	}
+	
+	private void drawProgressBar() {
+		int heightProg = getHeightOfBar();
+		for (int i = 0; i < progress; i++) {
+			bufferGraphics.drawImage(imageMap.get("progressBar"), 623, 515 - heightProg * (i+1), imageMap.get("progressBar").getWidth(this), heightProg, this);
+		}
+	}
+	
+	private void drawMenu() {
+		if (interfaceNumber == 0) {
+			bufferGraphics.drawImage(imageMap.get("missionBackground"), 0, 0, this);
+			drawButtonsFromList(pathwayMissionButtons);
+		} else if (interfaceNumber == 11) {
+			bufferGraphics.drawImage(imageMap.get("chooseBackground"), 0, 0, this);
+			drawButtonsFromList(chooseYourOwnAdventureButtons);
+		} else if (interfaceNumber == 12) {
+			bufferGraphics.drawImage(imageMap.get("missionAccomplished"), 115, 155, this);
+			hosFont = hosFont.deriveFont(18.0f);
+			bufferGraphics.setFont(hosFont);
+			FontMetrics fontMetrics = bufferGraphics.getFontMetrics(hosFont);
+			bufferGraphics.setColor(new Color(51, 51, 51));
+			bufferGraphics.drawString("Score: " + score, 489 - fontMetrics.stringWidth("Score: " + score), 258);
+			bufferGraphics.drawString("Completion bonus: +50", 489 - fontMetrics.stringWidth("Completion bonus: +50"), 286);
+			bufferGraphics.drawString("Total R&D points earned = " + (score+50), 489 - fontMetrics.stringWidth("Total R&D points earned = " + (score+50)), 314);
+
+			drawButtonsFromList(missionButtons);
+		}		
+	}
+	
+	private void drawButtonsFromList(ArrayList<Button> buttonList) {
+		for (int i = 0; i < buttonList.size(); i++) {
+			Button b = buttonList.get(i);
+			if (b.isPressed()) bufferGraphics.drawImage(b.getButtonPressed(), b.getPosition().x, b.getPosition().y, this);
+			else bufferGraphics.drawImage(b.getButton(), b.getPosition().x, b.getPosition().y, this);
+		}
+	}
+	
+	private boolean checkArrayNumber(int ballStrand) {
+		switch (ballStrand) {
+		case 0: if (inPlayOne.size() > 0) return true; else break;
+		case 1: if (inPlayTwo.size() > 0) return true; else break;
+		case 2: if (inPlayThree.size() > 0) return true; else break;
+		case 3: if (inPlayFour.size() > 0) return true; else break;
+		}
+		return false;
+	}
+	
+	private void drawCurrentBall() {
+		if (currentBall != null && !simplifying) {
+			if (difficulty > 1 && (checkArrayNumber(currentBall.getStrand()) || currentLevel > 3)) bufferGraphics.drawImage(balls[4], currentBall.getPosition().x, currentBall.getPosition().y, this);
+			else bufferGraphics.drawImage(currentBall.getBallImage(), currentBall.getPosition().x, currentBall.getPosition().y, this);
+			bufferGraphics.drawImage(currentBall.getNameImage(), currentBall.getPosition().x + 24 - currentBall.getNameImage().getWidth()/2, currentBall.getPosition().y + 24 - currentBall.getNameImage().getHeight()/2, this);
+		}
+	}
+	
+	private void drawCannons() {
+		bufferGraphics.drawImage(cannons[2], 106, 9, this);
+		bufferGraphics.drawImage(cannons[0], 106, 510, this);
+		bufferGraphics.drawImage(cannons[3], 610, 9, this);
+		bufferGraphics.drawImage(cannons[1], 610, 510, this);
+	}
+	
+	private void drawCentralMolecule() {
+		if (rotation%2 == 0) {
+			bufferGraphics.drawImage(imageMap.get("centerMolecule"), 363, 263, this);	
+		} else {
+			AffineTransform affineTransform = new AffineTransform();
+			affineTransform.rotate(Math.toRadians(45), 363 + imageMap.get("centerMolecule").getWidth()/2, 263 + imageMap.get("centerMolecule").getHeight()/2);
+			affineTransform.translate(363, 263);
+			Graphics2D g2d = (Graphics2D) bufferGraphics;
+			g2d.drawImage(imageMap.get("centerMolecule"), affineTransform, this);	
+		}
+
+		bufferGraphics.drawImage(centerTitle, 383, 288, this);
+	}
+	
+	private void drawMoleculesFromList(ArrayList<CurrentBall> currentBallList) {
+		for (int i = 0; i < currentBallList.size(); i++) {
+			CurrentBall b = currentBallList.get(i);
+			bufferGraphics.drawImage(b.getBallImage(), b.getPosition().x, b.getPosition().y, this);
+			bufferGraphics.drawImage(b.getNameImage(), b.getPosition().x + 24 - b.getNameImage().getWidth()/2, b.getPosition().y + 24 - b.getNameImage().getHeight()/2, this);
+		}
+	}
+	
+	private void drawArrowsFromList(ArrayList<CurrentBall> currentBallList) {
+		for (int i = 0; i < currentBallList.size(); i++) {
+			currentBallList.get(i).paintArrow((Graphics2D) bufferGraphics, this);
+		}
+	}
+	
+	private void drawMoleculesInPlay() {	
+		drawMoleculesFromList(inPlayOne);
+		drawMoleculesFromList(inPlayTwo);
+		drawMoleculesFromList(inPlayThree);
+		drawMoleculesFromList(inPlayFour);
+
+		if (startingArrowStrand[0] != null) startingArrowStrand[0].paintArrow((Graphics2D) bufferGraphics, this);
+		if (startingArrowStrand[1] != null) startingArrowStrand[1].paintArrow((Graphics2D) bufferGraphics, this);
+		if (startingArrowStrand[2] != null) startingArrowStrand[2].paintArrow((Graphics2D) bufferGraphics, this);
+		if (startingArrowStrand[3] != null) startingArrowStrand[3].paintArrow((Graphics2D) bufferGraphics, this);
+		
+		drawArrowsFromList(inPlayOne);
+		drawArrowsFromList(inPlayTwo);
+		drawArrowsFromList(inPlayThree);
+		drawArrowsFromList(inPlayFour);
+	}
+	
+	private int getHeightOfBar() {
+		int totalMols = numberOfMolecules[0] + numberOfMolecules[1] + numberOfMolecules[2] + numberOfMolecules[3];
+		if (totalMols > 0) return 400 / (totalMols);
+		return -100;
+	}
+	
+	
+	/* Takes in the user's key presses and interprets them based on the game state.
+	 */
+	@Override
+	public void keyPressed(KeyEvent evt) {
+		int key = evt.getKeyCode();
+		if (key == KeyEvent.VK_SPACE && !simplifying && ballExistence) {
+			if (currentBall != null) {
+				eraserFired = true;
+				currentBall.setPosChange(0, 0);
+			}
+		} else if ((key == KeyEvent.VK_LEFT || key == KeyEvent.VK_UP) && !simplifying) {
+			rotation = (rotation + 7)%8;
+			rotate();
+		} else if (key == KeyEvent.VK_P && !simplifying) {
+			pause = !pause;
+		} else if ((key == KeyEvent.VK_RIGHT || key == KeyEvent.VK_DOWN) && !simplifying) {
+			rotation = (rotation + 1)%8;
+			rotate();		
+		} else if (key == KeyEvent.VK_X && waitForUserToSimplify) {
+			sType = ArrowType.INHIBIT;
+			tryToSimplify();
+		} else if (key == KeyEvent.VK_A && waitForUserToSimplify) {
+			sType = ArrowType.ACTIVATE;
+			tryToSimplify();
+		}
+		repaint();
+	}
+	
+	/* This sets the position of the balls and arrows that are in play based on their starting position
+	 * and the rotation generated by the user rotating the molecule complex.
+	 * */
+	private void rotate() {
+		if (startingArrowStrand[0] != null) setStartingArrowPosition(startingArrowStrand[0], 0);
+		if (startingArrowStrand[1] != null) setStartingArrowPosition(startingArrowStrand[1], 2);
+		if (startingArrowStrand[2] != null) setStartingArrowPosition(startingArrowStrand[2], 4);
+		if (startingArrowStrand[3] != null) setStartingArrowPosition(startingArrowStrand[3], 6);
+		
+		repositionBallsInArray(inPlayOne, 0);
+		repositionBallsInArray(inPlayTwo, 2);
+		repositionBallsInArray(inPlayThree, 4);
+		repositionBallsInArray(inPlayFour, 6);
+	}
+	
+	/* Iterates through an inPlay ArrayList and sets the position of each according to it's 
+	 * */
+	private void repositionBallsInArray(ArrayList<CurrentBall> inPlay, int startingPosition) {
+		for (int i = 0; i < inPlay.size(); i++) {
+			CurrentBall b = inPlay.get(i);
+			setBallPosition(i, startingPosition, b);
+		}
+	}
+
+	
+	/* Sets the position of the arrows attached to the central molecule according to the rotation
+	 * and startingPosition of the arrow.
+	 * */
+	private void setStartingArrowPosition(StartingArrow strandArrow, int startingPosition) {
+		if ((rotation+startingPosition)%8 == 2) {
+			strandArrow.setPos(414, 273);
+			strandArrow.setImage(0);
+		}
+		if ((rotation+startingPosition)%8 == 3) {
+			strandArrow.setPos(424, 292);
+			strandArrow.setImage(1);
+
+		}
+		if ((rotation+startingPosition)%8 == 4) {
+			strandArrow.setPos(414, 314);
+			strandArrow.setImage(2);
+	
+		}
+		if ((rotation+startingPosition)%8 == 5) {
+			strandArrow.setPos(392, 325);
+			strandArrow.setImage(3);
+
+		}
+		if ((rotation+startingPosition)%8 == 6) {
+			strandArrow.setPos(372, 314);
+			strandArrow.setImage(4);	
+		}
+		if ((rotation+startingPosition)%8 == 7) {
+			strandArrow.setPos(360, 292);
+			strandArrow.setImage(5);
+			
+		}
+		if ((rotation+startingPosition)%8 == 0) {
+			strandArrow.setPos(372, 273);
+			strandArrow.setImage(6);
+			
+		}
+		if ((rotation+startingPosition)%8 == 1) {
+			strandArrow.setPos(392, 264);
+			strandArrow.setImage(7);
+		}
+
+	}
+	
+	/*Sets the position of the ball based on the rotation of the central molecule and the strand of the ball.
+	 * Unfortunately, hard coding the numbers seemed to be the best way of getting them to line up due to inconsistencies
+	 * of the arrowImages, and other slight quirks.
+	 * */
+	private void setBallPosition(int i, int change, CurrentBall b) {
+		if ((rotation+change)%8 == 2) {
+			b.setPos(416 + 37*i, 239 - 37*i);
+			b.setImage(0);
+			b.setArrowPos(b.getPosition().x + 35, b.getPosition().y - 2);
+		}
+		if ((rotation+change)%8 == 3) {
+			b.setPos(434 + 52*i, 277);
+			b.setImage(1);
+			b.setArrowPos(b.getPosition().x + 42, b.getPosition().y + 15);
+		}
+		if ((rotation+change)%8 == 4) {
+			b.setPos(418 + 37*i, 316 + 37*i);
+			b.setImage(2);
+			b.setArrowPos(b.getPosition().x + 33, b.getPosition().y + 34);
+		}
+		if ((rotation+change)%8 == 5) {
+			b.setPos(377, 334 + 52*i);
+			b.setImage(3);
+			b.setArrowPos(b.getPosition().x + 15, b.getPosition().y + 42);
+		}
+		if ((rotation+change)%8 == 6) {
+			b.setPos(335 - 37*i, 315 + 37*i);
+			b.setImage(4);
+			b.setArrowPos(b.getPosition().x - 2, b.getPosition().y + 33);
+		}
+		if ((rotation+change)%8 == 7) {
+			b.setPos(320 - 52*i, 277);
+			b.setImage(5);
+			b.setArrowPos(b.getPosition().x - 10, b.getPosition().y + 15);
+		}
+		if ((rotation+change)%8 == 0) {
+			b.setPos(338 - 37*i, 236 - 37*i);
+			b.setImage(6);
+			b.setArrowPos(b.getPosition().x - 3, b.getPosition().y - 3);
+		}
+		if ((rotation+change)%8 == 1) {
+			b.setPos(377, 220 - 52*i);
+			b.setImage(7);
+			b.setArrowPos(b.getPosition().x + 15, b.getPosition().y - 10);
+		}	
+	}
+	
+	//Makes the ball, currently in the cannon, start moving.
+	private void fireBall() {
+		ballExistence = true;
+		currentBall.setMove(setCannon);
+	}
+	
+	//Adds a ball to the corresponding inPlay array, meaning it's now attached to the strand in game.
+	private void increaseArray() {
+		switch(strand) {
+		case 0: inPlayOne.add(currentBall); break; 
+		case 1: inPlayTwo.add(currentBall); break;
+		case 2: inPlayThree.add(currentBall); break;
+		case 3: inPlayFour.add(currentBall); break;
+		}
+	}
+	
+	//Removes a ball from its inPlay array, meaning it was hit with the incorrect ball.
+	private void decreaseArray(CurrentBall b) {
+		switch(b.getStrand()) {
+		case 0: inPlayOne.remove(b); break;
+		case 1: inPlayTwo.remove(b); break;
+		case 2: inPlayThree.remove(b); break;
+		case 3: inPlayFour.remove(b); break;
+		}
+	}
+	
+	//Checks the collision between two balls; if they are part of the same strand, the fired ball will be attached.
+	//Otherwise, the fired ball will drop from the screen, and the ball it hit will be removed.
+	private void checkPreviousBall(Rectangle prevRect, Rectangle ballRec, CurrentBall previousBall) {
+		if (ballRec.intersects(prevRect)) {
+			if (previousBall.getStrand() != currentBall.getStrand()) {
+				decreaseArray(previousBall);
+				progress--;
+				currentBall.setPosChange(0, 10);
+			} else {
+				if (progress < 11) progress++;
+				score += 50;
+				increaseArray();
+				rotate();
+				repaint();
+				getNextBall();
+			}
+		}
+	}
+	
+	/* Checks the collision between the fired ball and the arrow attached to the central molecule, if they collide.
+	 * If the strands match, the fired ball will be attached, otherwise it drops from the screen.
+	 */
+	private void checkStartingArrow(Rectangle arrowRect, Rectangle ballRec, int arrowStrand) {
+		if (ballRec.intersects(arrowRect)) {
+			if (currentBall.getStrand() != arrowStrand) {
+				currentBall.setPosChange(0, 10);
+			} else if (currentBall.getPosChange().y != 10) {
+				if (progress < 11) progress++;
+				score += 25;
+				increaseArray();
+				ballExistence = false;
+				rotate();
+				repaint();
+				getNextBall();
+			}
+		}
+	}
+	
+	/* Checks the collision for a specific strand and the ball being fired.  Depending on the size
+	 * of the strand, it will check the starting arrow or the last ball in the strand.
+	 */
+	private void checkLastInStrandCollision(ArrayList<CurrentBall> inPlay, int strandNum) {
+		if (inPlay.size() > 0) {
+			CurrentBall previousBall = inPlay.get(inPlay.size()-1);
+			Rectangle prevRect = new Rectangle(previousBall.getPosition().x, previousBall.getPosition().y, 35, 35);
+			checkPreviousBall(prevRect, currentBall.getBounds(), previousBall);
+		} else if (startingArrowStrand[strandNum] != null){
+			Rectangle startingArrowRect = startingArrowStrand[strandNum].getBounds();
+			checkStartingArrow(currentBall.getBounds(), startingArrowRect, strandNum);
+		}
+	}
+	
+	// This checks collisions between the ball being fired and the strands already in play, the eraser, and the centerMolecule.
+	private void checkCollisions() {		
+		if (ballExistence && currentBall.getPosChange().y != 10) {
+			if (ballExistence && rotation % 2 == 0) {
+				checkLastInStrandCollision(inPlayOne, 0);
+				checkLastInStrandCollision(inPlayTwo, 1);
+				checkLastInStrandCollision(inPlayThree, 2);
+				checkLastInStrandCollision(inPlayFour, 3);				
+			}			
+			if (eraserFired && ballExistence) {
+				if (shooter.getBounds().intersects(currentBall.getBounds())) {
+					currentBall.setPosChange(4, 4);
+					repaint();
+					getNextBall();
+				}
+			}
+			Rectangle centerRect = new Rectangle(373, 272, imageMap.get("centerMolecule").getWidth(null) - 20, imageMap.get("centerMolecule").getHeight(null) - 20);
+			if (centerRect.intersects(currentBall.getBounds())) getNextBall();
+		}
+		if (ballExistence) {
+			if (currentBall.getPosition().y > 680 || currentBall.getPosition().y < 10) {
+				getNextBall();
+			}
+		}
+	}	
+	
+	/* This is called when the previous ball is either attached to correct strand, lost, or erased.
+	 * It determines the strand and cannon randomly, and checks whether there are any molecules left
+	 * to be fired from that strand.  If the size of the inPlay ArrayLists is less than the total in the
+	 * strand, there are more balls to be fired.
+	 * If all the balls have been fired, the game sets up the simplification portion of the game. 
+	 * 
+	 */
+	private void getNextBall() {
+		ballExistence = false;
+		boolean newBall = false;
+		while (!newBall) {
+			strand = generator.nextInt(4);
+			setCannon = generator.nextInt(4);
+			
+			//At difficulty 3, a ball that doesn't belong to any of the strands can be fired.
+			if (difficulty > 2) {
+				int prob = generator.nextInt(10);
+				if (prob < 2 && listFive.size() > 0) {
+					strand = 4;
+				}
+			}
+			
+			switch (strand) {
+			case 0: if (inPlayOne.size() < numberOfMolecules[0]) {currentBall = listOne.get(inPlayOne.size()); newBall = true;} 
+				break;
+			case 1: if (inPlayTwo.size() < numberOfMolecules[1]) {currentBall = listTwo.get(inPlayTwo.size()); newBall = true;}
+				break;
+			case 2: if (inPlayThree.size() < numberOfMolecules[2]) {currentBall = listThree.get(inPlayThree.size()); newBall = true;}
+				break;
+			case 3: if (inPlayFour.size() < numberOfMolecules[3]) {currentBall = listFour.get(inPlayFour.size()); newBall = true;}
+				break;
+			case 4: currentBall = listFive.get(0); newBall = true; break;
+			}
+			
+			if (newBall) {
+				setCurrentBallStartingPosition();
+			}
+			if (inPlayOne.size() == numberOfMolecules[0] && inPlayTwo.size() == numberOfMolecules[1] && inPlayThree.size() == numberOfMolecules[2] && inPlayFour.size() == numberOfMolecules[3]) {
+				newBall = true;	
+				ballExistence = false;
+				simplifying = true;	
+				checkSimplificationProgress();
+			}
+		}
+	}
+	
+	//Sets the ball position to the starting position for the cannon it's set as.
+	private void setCurrentBallStartingPosition() {
+		currentBall.setPosChange(4, 4);
+		switch (setCannon) {
+		case 0: currentBall.setPos(118, 18); break;
+		case 1: currentBall.setPos(635, 18); break;
+		case 2: currentBall.setPos(635, 535); break;
+		case 3: currentBall.setPos(118, 535); break;
+		}
+	}
+	
+	@Override
+	public void mouseClicked(MouseEvent arg0) {		
+		checkToSetUpLevel(arg0);
+	}
+	
+
+	/* When the player clicks with the mouse, the game will check to see if the player is pressing a button.
+	 * The buttons the player could be pressing depends what state the player is in (pause screen, main screen,
+	 * etc...).  Each of these screens has a list of possible buttons which will be iterated through in 
+	 * checkIfButtonPressed.
+	 * 
+	 * */	
+	private void checkToSetUpLevel(MouseEvent arg0) {
+		if (pickDifficulty) {
+			checkIfButtonPressed(levelButtons, arg0.getPoint());
+		} else if (tutorial) { 
+			checkIfButtonPressed(tutorialButtons, arg0.getPoint());
+		} else if (pause) {
+			checkIfButtonPressed(pauseScreenButtons, arg0.getPoint());
+		} else if (help) {
+			checkIfButtonPressed(helpButtons, arg0.getPoint());
+		} else if (interfaceNumber == 0) {
+			checkIfButtonPressed(pathwayMissionButtons, arg0.getPoint());
+		} else if (interfaceNumber == 11) {
+			checkIfButtonPressed(chooseYourOwnAdventureButtons, arg0.getPoint());
+		} else if (interfaceNumber == 12) {
+			checkIfButtonPressed(missionButtons, arg0.getPoint());
+		} else if (playing) {
+			if (new Rectangle(14, 548, 88, 42).contains(arg0.getPoint())) {
+				pause = !pause;
+			}
+		}	
+	}
+	
+	/* Compares the point a player clicks on with the buttons in the list of buttons from the current game state.
+	 * If a button is pressed, the game takes in the new location or action dictated by the button.
+	 */
+	private void checkIfButtonPressed(ArrayList<Button> buttonList, Point p) {
+		for (int i = 0; i < buttonList.size(); i++) {
+			Button b = buttonList.get(i);
+			if (b.getBounds().contains(p)) {
+				setUpInterfaceOrLevels(b.getTarget());
+			}
+		}
+	}
+	
+	/* Takes in the target (as an int) from the user clicking on a button and determines the action the game will take.
+	 * If the action is less than 0, it sets the difficulty for the level. 
+	 * If the action is between 1 and 7, it sets the level that will be played.
+	 * If the action is 0, it goes to the main menu.
+	 * If the action is 10, it sets up the tutorial.
+	 * If the action is 20, it restarts the level.
+	 * If the action is 25, it goes to the next level or the main menu if the user is done with a set of pathways.
+	 * If the action is 30, it unpauses the game.
+	 * If the action is 40, it gets the help screen.
+	 */
+	private void setUpInterfaceOrLevels(int action) {
+		interfaceNumber = action;
+		if (action < 0) {
+			difficulty = -action; 
+			pickDifficulty = false; 
+			setUpLists(currentLevel);
+		}
+		if (action > 0 && action < 8) {
+			currentLevel = action;
+			pickDifficulty = true;
+		}
+		switch(action) {
+		case 0:  goBackToMainMenu(); break;
+		case 10: tutorial = true; break;  
+		case 20: playing = false; finishedSimplifying = false; simplificationStep = -1; break;
+		case 25: currentLevel++; finishedSimplifying = false; simplificationStep = -1; break;
+		case 30: pause = false; help = false; break;
+		case 40: help = true;
+		}
+	}
+	
+	//Sets up the main menu by making sure all of the booleans that determine the state of the game are reset.
+	private void goBackToMainMenu() {
+		pickDifficulty = false; 
+		tutorial = false; 
+		pause = false;
+		playing = false; 
+		help = false; 
+		finishedSimplifying = false; 
+		simplifying = false;
+	}
+	
+	
 	
 	private void setUpLists(int level) {
 		
@@ -395,7 +1253,26 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		score = 0;
 		progress = 0;
 	}
-		
+	
+	private void fillSimplificationArrays() {
+		for (int i = 0; i < 4; i++) {
+			ripAXPos[i] = 416 + 37*i;
+			ripAYPos[i] = 188 - 37*i;
+			ripBXPos[i] = 408 + 37*i;
+			ripBYPos[i] = 206 - 37*i;
+			overArrowAXPos[i] = 431 + 37*i;
+			overArrowAYPos[i] = 243 - 37*i;
+			overMolAXPos[i] = 436 + 37*i;
+			overMolAYPos[i] = 202 - 37*i;
+			overArrowBXPos[i] = 424 + 37*i;
+			overArrowBYPos[i] = 262 - 37*i;
+			overMolBXPos[i] = 429 + 37*i;
+			overMolBYPos[i] = 224 - 37*i;
+			EMXPos[i] = 408 + 37*i;
+			EMYPos[i] = 258 - 37*i;
+		}
+	}
+	
 	private void getImages() throws IOException {
 		URL url = new URL(getCodeBase(), "CannonGameSpriteSheet.png");
 		BufferedImage finalSprites = ImageIO.read(url);
@@ -552,8 +1429,7 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		Button smBackBut = new Button(144, 378,  imageMap.get("smBackButton"),  imageMap.get("smBackPressed"), 0);
 		levelButtons.add(lvlOneBut); levelButtons.add(lvlTwoBut);
 		levelButtons.add(lvlThreeBut); levelButtons.add(smBackBut);
-
-		
+	
 		Button apcBut = new Button(75, 420, imageMap.get("APCButton"), imageMap.get("pathwayPressed"), 1);
 		Button scdkBut = new Button(75, 333,  imageMap.get("scdkButton"), imageMap.get("pathwayPressed"), 2);
 		Button p53But  = new Button(75, 245,  imageMap.get("p53button"), imageMap.get("pathwayPressed"), 3);
@@ -596,796 +1472,9 @@ public class Game extends Applet implements KeyListener, MouseListener, Runnable
 		
 		Button gotItBut2 = new Button(467, 372, imageMap.get("gotitButton"), null, 30);
 		Button quitLevelBut2 = new Button(144, 372, imageMap.get("quitLevelButton"), null, 0);
-		helpButtons.add(gotItBut2); helpButtons.add(quitLevelBut2);
-		
+		helpButtons.add(gotItBut2); helpButtons.add(quitLevelBut2);	
 	}
 	
-	public void update(Graphics g) {
-		paint(g);
-	}
-			
-	@Override
-	public void run() {
-		while(!gameOver) {
-			if (!pause && playing && currentLevel > 0 && !simplifying) {
-				rotate();
-				moveEraser();
-				moveCurrentBall();
-				setCountdown();
-				checkCollisions();
-				repaint();
-				try {
-					Thread.sleep(45);
-				} catch (InterruptedException e) {}
-			} else if (simplifying) {
-				rotate();
-				if (simplificationStep == 3) {
-					repaint();
-					try {
-						Thread.sleep(2000);
-					} catch (InterruptedException e) {}
-					updateLists();
-				}
-				if (simplificationStep == -2) {
-					simplificationStep = -1;
-					checkSimplificationProgress();
-				}
-			} else {
-				rotate();
-				repaint();
-			}
-		}
-	}
-	
-	private void setCountdown() {
-		if (!ballExistence) countdown--;
-		if (countdown == 0) {
-			fireBall();
-			countdown = 20;
-		}
-	}
-	
-	private void moveEraser() {
-		if (eraserFired) {
-			shooter.moveUp();
-		}
-		if (shooter.getPos().y < -70) {
-			eraserFired = false;
-			shooter.setyPos();
-		}
-	}
-	
-	private void moveCurrentBall() {
-		if (ballExistence) {
-			currentBall.move();
-			shooter.setxPos(currentBall.getPosition().x);
-		} 
-	}
-
-	static void activateAntiAliasing(Graphics g) {
-	    try {
-	        Graphics2D g2d = (Graphics2D)g;
-
-	        // for antialiasing geometric shapes
-	        g2d.setRenderingHint( RenderingHints.KEY_ANTIALIASING,
-	                              RenderingHints.VALUE_ANTIALIAS_ON );
-
-	        // for antialiasing text
-	        g2d.setRenderingHint( RenderingHints.KEY_TEXT_ANTIALIASING,
-	                              RenderingHints.VALUE_TEXT_ANTIALIAS_ON );
-
-	        // to go for quality over speed
-	        g2d.setRenderingHint( RenderingHints.KEY_RENDERING,
-	                              RenderingHints.VALUE_RENDER_QUALITY );
-	    }
-	    catch(ClassCastException ignored) {}
-	}
-
-	@Override public void paint(final Graphics g) {
-		activateAntiAliasing(bufferGraphics);
-		drawBackground();
-		drawCentralMolecule();
-		drawMoleculesInPlay();
-		drawSimplification();
-		if (!simplifying) drawCannons();
-		if (!simplifying) drawEraser();
-		if (!simplifying) drawProgressBar();
-		if (finishedSimplifying) bufferGraphics.drawImage(imageMap.get("pathwaySimplified"), 191, 15, this);
-		drawCurrentBall();	
-		if (!playing) drawMenu();
-		if (pause) drawPauseScreen();
-		if (pause && help) drawHelpScreen();
-		if (tutorial && !playing) drawTutorialScreen();
-		if (pickDifficulty && !playing) drawDifficultyScreen();
-		if (playing) bufferGraphics.drawImage(imageMap.get("greyBorder"), 0, 0, this);
-		g.drawImage(offscreen, 0, 0, this);
-	}
-	
-	private void checkSimplificationProgress() {
-		if (inPlayOne.size() > 1) {
-			rotateToPosition(4);
-			cloneList(inPlayOne);
-			simplificationStrand = 0;
-			removeMoleculesToBeSimplified(inPlayOne);	
-		} else if (inPlayTwo.size() > 1) {
-			rotateToPosition(2);
-			cloneList(inPlayTwo);
-			simplificationStrand = 1;
-			removeMoleculesToBeSimplified(inPlayTwo);
-		} else if (inPlayThree.size() > 1) {
-			rotateToPosition(0);
-			cloneList(inPlayThree);
-			simplificationStrand = 2;
-			removeMoleculesToBeSimplified(inPlayThree);
-		} else if (inPlayFour.size() > 1) {
-			rotateToPosition(6);
-			cloneList(inPlayFour);
-			simplificationStrand = 3;
-			removeMoleculesToBeSimplified(inPlayFour);
-		} else {
-			finishedSimplifying = true;
-			rotate();
-			repaint();
-			try {
-				Thread.sleep(2000);
-			} catch (InterruptedException e) {}
-			simplifying = false;
-			interfaceNumber = 12;
-			playing = false;
-		}
-	}
-	
-	private void cloneList(ArrayList<CurrentBall> inPlay) {
-		simplificationList = new ArrayList<CurrentBall>();
-		for (CurrentBall ball:inPlay) simplificationList.add(new CurrentBall(ball));
-	}
-	
-	private void removeMoleculesToBeSimplified(ArrayList<CurrentBall> inPlay) {
-		simplifyingMolecules[1] = inPlay.remove(inPlay.size()-1);
-		simplifyingMolecules[0] = inPlay.remove(inPlay.size()-1);
-		setUpSimplification();
-	}
-	
-	private void rotateToPosition(int position) {
-		while (rotation != position) {
-			try {
-				Thread.sleep(200);
-			} catch (InterruptedException e) {}
-			if (rotation > position) rotation--;
-			else rotation++;
-			rotate();
-			repaint();
-		}
-	}
-	
-	private void setUpSimplification() {
-		simplificationStep = 0;
-		repaint();
-		try {
-			Thread.sleep(2000);
-		} catch (InterruptedException e) {}
-		simplificationStep++;
-		repaint();
-		try {
-			Thread.sleep(2000);
-		} catch (InterruptedException e) {}
-		simplificationStep++;
-		repaint();
-		waitForUserToSimplify = true;
-	}
-	
-	private void tryToSimplify() {
-		ArrowType atOne, atTwo;
-		if (simplificationList.size() > 2) atOne = simplificationList.get(simplificationList.size()-3).getSimplifyType();
-		else atOne = startingArrowStrand[simplificationStrand].getArrowType();
-		atTwo = simplifyingMolecules[0].getSimplifyType();
-		if ((atOne == ArrowType.ACTIVATE && atTwo == ArrowType.ACTIVATE) || (atOne == ArrowType.INHIBIT && atTwo == ArrowType.INHIBIT)) {
-			if (sType == ArrowType.ACTIVATE) {
-				simplifySuccess();
-			} else {
-				failureToSimplifyCorrectly();
-			}
-		}
-		if ((atOne == ArrowType.ACTIVATE && atTwo == ArrowType.INHIBIT) || (atOne == ArrowType.INHIBIT && atTwo == ArrowType.ACTIVATE)) {
-			if (sType == ArrowType.INHIBIT) {
-				simplifySuccess();
-			} else {
-				failureToSimplifyCorrectly();
-			}
-		}
-	}
-	
-	private void simplifySuccess() {
-		waitForUserToSimplify = false;
-		simplificationStep = 3;
-	}
-	
-	private void updateLists() {
-		if (simplificationList.size() > 2) {
-			simplificationList.get(simplificationList.size()-3).setSimplifyType(sType);
-			if (sType == ArrowType.ACTIVATE) {
-				String arrowImageString = simplificationList.get(simplificationList.size()-3).getArrowColor() + "Arrow";
-				simplificationList.get(simplificationList.size()-3).setArrowImage(imageMap.get(arrowImageString));
-			} else {
-				String arrowImageString = simplificationList.get(simplificationList.size()-3).getArrowColor() + "Inhibitor";
-				simplificationList.get(simplificationList.size()-3).setArrowImage(imageMap.get(arrowImageString));
-			}
-		} else {
-			startingArrowStrand[simplificationStrand].setSimplifyType(sType);
-			if (sType == ArrowType.ACTIVATE) startingArrowStrand[simplificationStrand].setArrowImage(imageMap.get(startingArrowStrand[simplificationStrand].getArrowColor() + "Arrow"));
-			else startingArrowStrand[simplificationStrand].setArrowImage(imageMap.get(startingArrowStrand[simplificationStrand].getArrowColor() + "Inhibitor"));
-		}
-		simplificationList.remove(simplificationList.size()-2);
-		switch(simplificationStrand) {
-		case 0: inPlayOne = simplificationList; break;
-		case 1: inPlayTwo = simplificationList; break;
-		case 2: inPlayThree = simplificationList; break;
-		case 3:	inPlayFour = simplificationList; break;
-		}
-		simplificationStep = -2;
-		rotate();
-	}
-	
-	private void failureToSimplifyCorrectly() {
-		switch(simplificationStrand) {
-		case 0: inPlayOne = simplificationList; break;
-		case 1: inPlayTwo = simplificationList; break;
-		case 2: inPlayThree = simplificationList; break;
-		case 3:	inPlayFour = simplificationList; break;
-		}
-		rotate();
-		waitForUserToSimplify = false;
-		simplificationStep = -2;
-		repaint();
-	}
-	
-	private void drawSimplification() {
-		if (simplificationStep == -2) {
-			bufferGraphics.drawImage(strips[simplificationList.size()], 401, stripYPos[simplificationList.size()-1], this);
-		}
-		if (simplificationStep == 0) {
-			bufferGraphics.drawImage(strips[simplificationList.size()-1], 401, stripYPos[simplificationList.size()-1], this);
-			bufferGraphics.drawImage(simplifyingMolecules[0].getBallImage(), simplifyingMolecules[0].getPosition().x, simplifyingMolecules[0].getPosition().y, this);
-			bufferGraphics.drawImage(simplifyingMolecules[0].getNameImage(), 
-									 simplifyingMolecules[0].getPosition().x + 24 - simplifyingMolecules[0].getNameImage().getWidth()/2, 
-									 simplifyingMolecules[0].getPosition().y + 24 - simplifyingMolecules[0].getNameImage().getHeight()/2, this);
-			bufferGraphics.drawImage(simplifyingMolecules[1].getBallImage(), simplifyingMolecules[1].getPosition().x, simplifyingMolecules[1].getPosition().y, this);
-			bufferGraphics.drawImage(simplifyingMolecules[1].getNameImage(), 
-									 simplifyingMolecules[1].getPosition().x + 24 - simplifyingMolecules[1].getNameImage().getWidth()/2, 
-									 simplifyingMolecules[1].getPosition().y + 24 - simplifyingMolecules[1].getNameImage().getHeight()/2, this);
-			simplifyingMolecules[0].paintArrow((Graphics2D) bufferGraphics, this);
-		} else if (simplificationStep == 1) {
-			bufferGraphics.drawImage(strips[simplificationList.size()-2], 401, stripYPos[simplificationList.size()-2], this);
-			simplifyingMolecules[0].setArrowPos(overArrowAXPos[simplificationList.size()-2], overArrowAYPos[simplificationList.size()-2]);
-			bufferGraphics.drawImage(simplifyingMolecules[0].getBallImage(), simplifyingMolecules[0].getPosition().x, simplifyingMolecules[0].getPosition().y, this);
-			bufferGraphics.drawImage(simplifyingMolecules[0].getNameImage(), 
-									 simplifyingMolecules[0].getPosition().x + 24 - simplifyingMolecules[0].getNameImage().getWidth()/2, 
-									 simplifyingMolecules[0].getPosition().y + 24 - simplifyingMolecules[0].getNameImage().getHeight()/2, this);
-			bufferGraphics.drawImage(rips[0], ripAXPos[simplificationList.size()-2], ripAYPos[simplificationList.size()-2], this);
-			bufferGraphics.drawImage(simplifyingMolecules[1].getBallImage(), overMolAXPos[simplificationList.size()-2], overMolAYPos[simplificationList.size()-2], this);
-			bufferGraphics.drawImage(simplifyingMolecules[1].getNameImage(), 
-								     overMolAXPos[simplificationList.size()-2] + 24 - simplifyingMolecules[1].getNameImage().getWidth()/2, 
-								     overMolAYPos[simplificationList.size()-2] + 24 - simplifyingMolecules[1].getNameImage().getHeight()/2, this);
-			simplifyingMolecules[0].paintArrow((Graphics2D) bufferGraphics, this);
-		} else if (simplificationStep == 2 || simplificationStep == 3) {
-			bufferGraphics.drawImage(strips[simplificationList.size()-2], 401, stripYPos[simplificationList.size()-2], this);
-			simplifyingMolecules[0].setArrowPos(overArrowBXPos[simplificationList.size()-2], overArrowBYPos[simplificationList.size()-2]);
-			bufferGraphics.drawImage(rips[1], ripBXPos[simplificationList.size()-2], ripBYPos[simplificationList.size()-2], this);
-			bufferGraphics.drawImage(simplifyingMolecules[1].getBallImage(), overMolBXPos[simplificationList.size()-2], overMolBYPos[simplificationList.size()-2], this);
-			bufferGraphics.drawImage(simplifyingMolecules[1].getNameImage(), 
-								     overMolBXPos[simplificationList.size()-2] + 24 - simplifyingMolecules[1].getNameImage().getWidth()/2, 
-								     overMolBYPos[simplificationList.size()-2] + 24 - simplifyingMolecules[1].getNameImage().getHeight()/2, this);
-			simplifyingMolecules[0].paintArrow((Graphics2D) bufferGraphics, this);
-		}
-		if (simplificationStep == 3) {
-			bufferGraphics.drawImage(imageMap.get("eraserMark"), EMXPos[simplificationList.size()-2], EMYPos[simplificationList.size()-2], this);
-		}
-	}
-	
-	private void drawDifficultyScreen() {
-		bufferGraphics.setColor(Color.BLACK);
-		bufferGraphics.drawRect(0, 0, width, height); bufferGraphics.fillRect(0, 0, width, height);
-		bufferGraphics.drawImage(imageMap.get("redPause"), 115, 155, this);
-		drawString(34, "Pick Difficulty", new Point(144, 216));
-		drawButtonsFromList(levelButtons);		
-	}
-	
-	private void drawPauseScreen() {
-		bufferGraphics.drawImage(imageMap.get("redPause"), 115, 155, this);
-		drawString(34, getTitleString(), new Point(144, 216));
-		drawButtonsFromList(pauseScreenButtons);
-	}
-	
-	private void drawHelpScreen() {
-		bufferGraphics.setColor(Color.BLACK);
-		bufferGraphics.drawRect(0, 0, width, height); bufferGraphics.fillRect(0, 0, width, height);
-		if (simplifying) bufferGraphics.drawImage(imageMap.get("tutorialPageTwo"), 115, 155, this);
-		else bufferGraphics.drawImage(imageMap.get("tutorialPageOne"), 115, 155, this);
-		drawButtonsFromList(helpButtons);
-	}
-	
-	private void drawTutorialScreen() {
-		bufferGraphics.setColor(Color.BLACK);
-		bufferGraphics.drawRect(0, 0, width, height); bufferGraphics.fillRect(0, 0, width, height);
-		bufferGraphics.drawImage(imageMap.get("tutorialPageOne"), 115, 155, this);
-		drawButtonsFromList(tutorialButtons);
-	}
-	
-	private void drawString(int fontSize, String string, Point position) {
-		hosFont = hosFont.deriveFont(fontSize);
-		bufferGraphics.setFont(hosFont);
-		bufferGraphics.setColor(new Color(51, 51, 51));
-		bufferGraphics.drawString(string, position.x, position.y);
-	}
-	
-	private String getTitleString() {
-		switch(currentLevel) {
-		case 1: return "APC"; 
-		case 2: return "S-Cdk"; 
-		case 3: return "p53"; 
-		case 4: return "Delta-Notch"; 
-		case 5: return "TGF-Beta"; 
-		case 6: return "Hedgehog"; 
-		case 7: return "Wnt"; 
-		}
-		return "";
-	}
-	
-	private void drawBackground() {
-		bufferGraphics.drawImage(imageMap.get("background"), 0, 0, this);
-		if (pause) {
-			bufferGraphics.drawImage(imageMap.get("pauseButtonPressed"), 14, 548, this);
-		} else { 
-			bufferGraphics.drawImage(imageMap.get("pauseButton"), 14, 548, this);
-		}
-		hosFont = hosFont.deriveFont(34.0f);
-		bufferGraphics.setFont(hosFont);
-		FontMetrics fontMetrics = bufferGraphics.getFontMetrics(hosFont);
-		bufferGraphics.setColor(Color.RED);
-		bufferGraphics.drawString("" + score, 95 - fontMetrics.stringWidth("" + score), 94);
-	}
-	
-	private void drawEraser() {	
-		Point p = shooter.getPos();
-		bufferGraphics.drawImage( imageMap.get("shooterImg"), p.x, p.y, this);
-	}
-	
-	private void drawProgressBar() {
-		int heightProg = getHeightOfBar();
-		for (int i = 0; i < progress; i++) {
-			bufferGraphics.drawImage(imageMap.get("progressBar"), 623, 515 - heightProg * (i+1), imageMap.get("progressBar").getWidth(this), heightProg, this);
-		}
-	}
-	
-	private void drawMenu() {
-		if (interfaceNumber == 0) {
-			bufferGraphics.drawImage(imageMap.get("missionBackground"), 0, 0, this);
-			drawButtonsFromList(pathwayMissionButtons);
-		} else if (interfaceNumber == 11) {
-			bufferGraphics.drawImage(imageMap.get("chooseBackground"), 0, 0, this);
-			drawButtonsFromList(chooseYourOwnAdventureButtons);
-		} else if (interfaceNumber == 12) {
-			bufferGraphics.drawImage(imageMap.get("missionAccomplished"), 115, 155, this);
-			hosFont = hosFont.deriveFont(18.0f);
-			bufferGraphics.setFont(hosFont);
-			FontMetrics fontMetrics = bufferGraphics.getFontMetrics(hosFont);
-			bufferGraphics.setColor(new Color(51, 51, 51));
-			bufferGraphics.drawString("Score: " + score, 489 - fontMetrics.stringWidth("Score: " + score), 258);
-			bufferGraphics.drawString("Completion bonus: +50", 489 - fontMetrics.stringWidth("Completion bonus: +50"), 286);
-			bufferGraphics.drawString("Total R&D points earned = " + (score+50), 489 - fontMetrics.stringWidth("Total R&D points earned = " + (score+50)), 314);
-
-			drawButtonsFromList(missionButtons);
-		}		
-	}
-	
-	private void drawButtonsFromList(ArrayList<Button> buttonList) {
-		for (int i = 0; i < buttonList.size(); i++) {
-			Button b = buttonList.get(i);
-			if (b.isPressed()) bufferGraphics.drawImage(b.getButtonPressed(), b.getPosition().x, b.getPosition().y, this);
-			else bufferGraphics.drawImage(b.getButton(), b.getPosition().x, b.getPosition().y, this);
-		}
-	}
-	
-	private boolean checkArrayNumber(int ballStrand) {
-		switch (ballStrand) {
-		case 0: if (inPlayOne.size() > 0) return true; else break;
-		case 1: if (inPlayTwo.size() > 0) return true; else break;
-		case 2: if (inPlayThree.size() > 0) return true; else break;
-		case 3: if (inPlayFour.size() > 0) return true; else break;
-		}
-		return false;
-	}
-	
-	private void drawCurrentBall() {
-		if (currentBall != null && !simplifying) {
-			if (difficulty > 1 && (checkArrayNumber(currentBall.getStrand()) || currentLevel > 3)) bufferGraphics.drawImage(balls[4], currentBall.getPosition().x, currentBall.getPosition().y, this);
-			else bufferGraphics.drawImage(currentBall.getBallImage(), currentBall.getPosition().x, currentBall.getPosition().y, this);
-			bufferGraphics.drawImage(currentBall.getNameImage(), currentBall.getPosition().x + 24 - currentBall.getNameImage().getWidth()/2, currentBall.getPosition().y + 24 - currentBall.getNameImage().getHeight()/2, this);
-		}
-	}
-	
-	private void drawCannons() {
-		bufferGraphics.drawImage(cannons[2], 106, 9, this);
-		bufferGraphics.drawImage(cannons[0], 106, 510, this);
-		bufferGraphics.drawImage(cannons[3], 610, 9, this);
-		bufferGraphics.drawImage(cannons[1], 610, 510, this);
-	}
-	
-	private void drawCentralMolecule() {
-		if (rotation%2 == 0) {
-			bufferGraphics.drawImage(imageMap.get("centerMolecule"), 363, 263, this);	
-		} else {
-			AffineTransform affineTransform = new AffineTransform();
-			affineTransform.rotate(Math.toRadians(45), 363 + imageMap.get("centerMolecule").getWidth()/2, 263 + imageMap.get("centerMolecule").getHeight()/2);
-			affineTransform.translate(363, 263);
-			Graphics2D g2d = (Graphics2D) bufferGraphics;
-			g2d.drawImage(imageMap.get("centerMolecule"), affineTransform, this);	
-		}
-
-		bufferGraphics.drawImage(centerTitle, 383, 288, this);
-	}
-	
-	private void drawMoleculesFromList(ArrayList<CurrentBall> currentBallList) {
-		for (int i = 0; i < currentBallList.size(); i++) {
-			CurrentBall b = currentBallList.get(i);
-			bufferGraphics.drawImage(b.getBallImage(), b.getPosition().x, b.getPosition().y, this);
-			bufferGraphics.drawImage(b.getNameImage(), b.getPosition().x + 24 - b.getNameImage().getWidth()/2, b.getPosition().y + 24 - b.getNameImage().getHeight()/2, this);
-		}
-	}
-	
-	private void drawArrowsFromList(ArrayList<CurrentBall> currentBallList) {
-		for (int i = 0; i < currentBallList.size(); i++) {
-			currentBallList.get(i).paintArrow((Graphics2D) bufferGraphics, this);
-		}
-	}
-	
-	private void drawMoleculesInPlay() {	
-		drawMoleculesFromList(inPlayOne);
-		drawMoleculesFromList(inPlayTwo);
-		drawMoleculesFromList(inPlayThree);
-		drawMoleculesFromList(inPlayFour);
-
-		if (startingArrowStrand[0] != null) startingArrowStrand[0].paintArrow((Graphics2D) bufferGraphics, this);
-		if (startingArrowStrand[1] != null) startingArrowStrand[1].paintArrow((Graphics2D) bufferGraphics, this);
-		if (startingArrowStrand[2] != null) startingArrowStrand[2].paintArrow((Graphics2D) bufferGraphics, this);
-		if (startingArrowStrand[3] != null) startingArrowStrand[3].paintArrow((Graphics2D) bufferGraphics, this);
-		
-		drawArrowsFromList(inPlayOne);
-		drawArrowsFromList(inPlayTwo);
-		drawArrowsFromList(inPlayThree);
-		drawArrowsFromList(inPlayFour);
-	}
-	
-	private int getHeightOfBar() {
-		int totalMols = numberOfMolecules[0] + numberOfMolecules[1] + numberOfMolecules[2] + numberOfMolecules[3];
-		if (totalMols > 0) return 400 / (totalMols);
-		return -100;
-	}
-	
-	@Override
-	public void keyPressed(KeyEvent evt) {
-		int key = evt.getKeyCode();
-		if (key == KeyEvent.VK_SPACE && !simplifying && ballExistence) {
-			if (currentBall != null) {
-				eraserFired = true;
-				currentBall.setPosChange(0, 0);
-			}
-		} else if ((key == KeyEvent.VK_LEFT || key == KeyEvent.VK_UP) && !simplifying) {
-			rotation = (rotation + 7)%8;
-			rotate();
-		} else if (key == KeyEvent.VK_P && !simplifying) {
-			pause = !pause;
-		} else if ((key == KeyEvent.VK_RIGHT || key == KeyEvent.VK_DOWN) && !simplifying) {
-			rotation = (rotation + 1)%8;
-			rotate();		
-		} else if (key == KeyEvent.VK_X && waitForUserToSimplify) {
-			sType = ArrowType.INHIBIT;
-			tryToSimplify();
-		} else if (key == KeyEvent.VK_A && waitForUserToSimplify) {
-			sType = ArrowType.ACTIVATE;
-			tryToSimplify();
-		}
-		repaint();
-	}
-	
-	private void rotate() {
-		if (startingArrowStrand[0] != null) setStartingArrowPosition(startingArrowStrand[0], 6);
-		if (startingArrowStrand[1] != null) setStartingArrowPosition(startingArrowStrand[1], 0);
-		if (startingArrowStrand[2] != null) setStartingArrowPosition(startingArrowStrand[2], 2);
-		if (startingArrowStrand[3] != null) setStartingArrowPosition(startingArrowStrand[3], 4);
-		
-		repositionBallsInArray(inPlayOne, 6);
-		repositionBallsInArray(inPlayTwo, 0);
-		repositionBallsInArray(inPlayThree, 2);
-		repositionBallsInArray(inPlayFour, 4);
-	}
-	
-	private void repositionBallsInArray(ArrayList<CurrentBall> inPlay, int strandPosition) {
-		for (int i = 0; i < inPlay.size(); i++) {
-			CurrentBall b = inPlay.get(i);
-			setBallPosition(i, strandPosition, b);
-		}
-	}
-
-	private void setStartingArrowPosition(StartingArrow strandArrow, int change) {
-		if ((rotation+change)%8 == 2) {
-			strandArrow.setPos(414, 273);
-			strandArrow.setImage(0);
-		}
-		if ((rotation+change)%8 == 3) {
-			strandArrow.setPos(424, 292);
-			strandArrow.setImage(1);
-
-		}
-		if ((rotation+change)%8 == 4) {
-			strandArrow.setPos(415, 315);
-			strandArrow.setImage(2);
-	
-		}
-		if ((rotation+change)%8 == 5) {
-			strandArrow.setPos(392, 325);
-			strandArrow.setImage(3);
-
-		}
-		if ((rotation+change)%8 == 6) {
-			strandArrow.setPos(370, 313);
-			strandArrow.setImage(4);	
-		}
-		if ((rotation+change)%8 == 7) {
-			strandArrow.setPos(360, 292);
-			strandArrow.setImage(5);
-			
-		}
-		if ((rotation+change)%8 == 0) {
-			strandArrow.setPos(372, 272);
-			strandArrow.setImage(6);
-			
-		}
-		if ((rotation+change)%8 == 1) {
-			strandArrow.setPos(392, 264);
-			strandArrow.setImage(7);
-		}
-
-	}
-	
-	private void setBallPosition(int i, int change, CurrentBall b) {
-		if ((rotation+change)%8 == 2) {
-			b.setPos(416 + 37*i, 239 - 37*i);
-			b.setImage(0);
-			b.setArrowPos(b.getPosition().x + 35, b.getPosition().y - 2);
-		}
-		if ((rotation+change)%8 == 3) {
-			b.setPos(434 + 52*i, 277);
-			b.setImage(1);
-			b.setArrowPos(b.getPosition().x + 42, b.getPosition().y + 15);
-		}
-		if ((rotation+change)%8 == 4) {
-			b.setPos(418 + 37*i, 316 + 37*i);
-			b.setImage(2);
-			b.setArrowPos(b.getPosition().x + 33, b.getPosition().y + 34);
-		}
-		if ((rotation+change)%8 == 5) {
-			b.setPos(377, 334 + 52*i);
-			b.setImage(3);
-			b.setArrowPos(b.getPosition().x + 15, b.getPosition().y + 42);
-		}
-		if ((rotation+change)%8 == 6) {
-			b.setPos(335 - 37*i, 315 + 37*i);
-			b.setImage(4);
-			b.setArrowPos(b.getPosition().x - 2, b.getPosition().y + 33);
-		}
-		if ((rotation+change)%8 == 7) {
-			b.setPos(320 - 52*i, 277);
-			b.setImage(5);
-			b.setArrowPos(b.getPosition().x - 10, b.getPosition().y + 15);
-		}
-		if ((rotation+change)%8 == 0) {
-			b.setPos(338 - 37*i, 236 - 37*i);
-			b.setImage(6);
-			b.setArrowPos(b.getPosition().x - 3, b.getPosition().y - 3);
-		}
-		if ((rotation+change)%8 == 1) {
-			b.setPos(377, 220 - 52*i);
-			b.setImage(7);
-			b.setArrowPos(b.getPosition().x + 15, b.getPosition().y - 10);
-		}	
-	}
-	
-	private void fireBall() {
-		ballExistence = true;
-		currentBall.setMove(setCannon);
-	}
-	
-	private void increaseArray() {
-		switch(strand) {
-		case 0: inPlayOne.add(currentBall); break; 
-		case 1: inPlayTwo.add(currentBall); break;
-		case 2: inPlayThree.add(currentBall); break;
-		case 3: inPlayFour.add(currentBall); break;
-		}
-	}
-	
-	private void decreaseArray(int collisionStrand, CurrentBall b) {
-		switch(collisionStrand) {
-		case 0: inPlayOne.remove(b); break;
-		case 1: inPlayTwo.remove(b); break;
-		case 2: inPlayThree.remove(b); break;
-		case 3: inPlayFour.remove(b); break;
-		}
-	}
-	
-	private void checkPreviousBall(Rectangle prevRect, Rectangle ballRec, CurrentBall previousBall) {
-		if (ballRec.intersects(prevRect)) {
-			if (previousBall.getStrand() != currentBall.getStrand()) {
-				decreaseArray(previousBall.getStrand(), previousBall);
-				progress--;
-				currentBall.setPosChange(0, 10);
-			} else {
-				if (progress < 11) progress++;
-				score += 50;
-				increaseArray();
-				rotate();
-				repaint();
-				getNextBall();
-			}
-		}
-	}
-	
-	private void checkStartingArrow(Rectangle arrowRect, Rectangle ballRec, int arrowStrand) {
-		if (ballRec.intersects(arrowRect)) {
-			if (currentBall.getStrand() != arrowStrand) {
-				currentBall.setPosChange(0, 10);
-			} else if (currentBall.getPosChange().y != 10) {
-				if (progress < 11) progress++;
-				score += 25;
-				increaseArray();
-				ballExistence = false;
-				rotate();
-				repaint();
-				getNextBall();
-			}
-		}
-	}
-	
-	private void checkLastInStrandCollision(ArrayList<CurrentBall> inPlay, int strandNum) {
-		if (inPlay.size() > 0) {
-			CurrentBall previousBall = inPlay.get(inPlay.size()-1);
-			Rectangle prevRect = new Rectangle(previousBall.getPosition().x, previousBall.getPosition().y, 35, 35);
-			checkPreviousBall(prevRect, currentBall.getBounds(), previousBall);
-		} else if (startingArrowStrand[strandNum] != null){
-			Rectangle startingArrowRect = startingArrowStrand[strandNum].getBounds();
-			checkStartingArrow(currentBall.getBounds(), startingArrowRect, strandNum);
-		}
-	}
-	
-	private void checkCollisions() {		
-		if (ballExistence && currentBall.getPosChange().y != 10) {
-			if (ballExistence && rotation % 2 == 0) {
-				checkLastInStrandCollision(inPlayOne, 0);
-				checkLastInStrandCollision(inPlayTwo, 1);
-				checkLastInStrandCollision(inPlayThree, 2);
-				checkLastInStrandCollision(inPlayFour, 3);				
-			}			
-			if (eraserFired && ballExistence) {
-				if (shooter.getBounds().intersects(currentBall.getBounds())) {
-					currentBall.setPosChange(4, 4);
-					repaint();
-					getNextBall();
-				}
-			}
-			Rectangle centerRect = new Rectangle(373, 272, imageMap.get("centerMolecule").getWidth(null) - 20, imageMap.get("centerMolecule").getHeight(null) - 20);
-			if (centerRect.intersects(currentBall.getBounds())) getNextBall();
-		}
-		if (ballExistence) {
-			if (currentBall.getPosition().y > 680 || currentBall.getPosition().y < 10) {
-				getNextBall();
-			}
-		}
-	}	
-	
-	private void getNextBall() {
-		ballExistence = false;
-		boolean newBall = false;
-		while (!newBall) {
-			strand = generator.nextInt(4);
-			setCannon = generator.nextInt(4);
-			
-			if (difficulty > 2) {
-				int prob = generator.nextInt(10);
-				if (prob < 2 && listFive.size() > 0) {
-					strand = 4;
-				}
-			}
-			
-			switch (strand) {
-			case 0: if (inPlayOne.size() < numberOfMolecules[0]) {currentBall = listOne.get(inPlayOne.size()); newBall = true;} 
-				break;
-			case 1: if (inPlayTwo.size() < numberOfMolecules[1]) {currentBall = listTwo.get(inPlayTwo.size()); newBall = true;}
-				break;
-			case 2: if (inPlayThree.size() < numberOfMolecules[2]) {currentBall = listThree.get(inPlayThree.size()); newBall = true;}
-				break;
-			case 3: if (inPlayFour.size() < numberOfMolecules[3]) {currentBall = listFour.get(inPlayFour.size()); newBall = true;}
-				break;
-			case 4: currentBall = listFive.get(0); newBall = true; break;
-			}
-			
-			if (newBall) {
-				setCurrentBallPosition();
-			}
-			if (inPlayOne.size() == numberOfMolecules[0] && inPlayTwo.size() == numberOfMolecules[1] && inPlayThree.size() == numberOfMolecules[2] && inPlayFour.size() == numberOfMolecules[3]) {
-				newBall = true;	
-				ballExistence = false;
-				simplifying = true;	
-				checkSimplificationProgress();
-			}
-		}
-	}
-	
-	private void setCurrentBallPosition() {
-		currentBall.setPosChange(4, 4);
-		switch (setCannon) {
-		case 0: currentBall.setPos(118, 18); break;
-		case 1: currentBall.setPos(635, 18); break;
-		case 2: currentBall.setPos(635, 535); break;
-		case 3: currentBall.setPos(118, 535); break;
-		}
-	}
-	
-	@Override
-	public void mouseClicked(MouseEvent arg0) {		
-		checkToSetUpLevel(arg0);
-	}
-	
-	private void checkIfButtonPressed(ArrayList<Button> buttonList, Point p) {
-		for (int i = 0; i < buttonList.size(); i++) {
-			Button b = buttonList.get(i);
-			if (b.getBounds().contains(p)) setUpInterfaceOrLevels(b.getTarget());
-		}
-	}
-		
-	private void checkToSetUpLevel(MouseEvent arg0) {
-		if (pickDifficulty) {
-			checkIfButtonPressed(levelButtons, arg0.getPoint());
-		} else if (tutorial) { 
-			checkIfButtonPressed(tutorialButtons, arg0.getPoint());
-		} else if (pause) {
-			checkIfButtonPressed(pauseScreenButtons, arg0.getPoint());
-		} else if (help) {
-			checkIfButtonPressed(helpButtons, arg0.getPoint());
-		} else if (interfaceNumber == 0) {
-			checkIfButtonPressed(pathwayMissionButtons, arg0.getPoint());
-		} else if (interfaceNumber == 11) {
-			checkIfButtonPressed(chooseYourOwnAdventureButtons, arg0.getPoint());
-		} else if (interfaceNumber == 12) {
-			checkIfButtonPressed(missionButtons, arg0.getPoint());
-		} else if (playing) {
-			if (new Rectangle(14, 548, 88, 42).contains(arg0.getPoint())) {
-				pause = !pause;
-			}
-		}	
-	}
-	
-	private void setUpInterfaceOrLevels(int number) {
-		interfaceNumber = number;
-		if (number < 0) {
-			difficulty = -number; 
-			pickDifficulty = false; 
-			setUpLists(currentLevel);
-		}
-		if (number > 0 && number < 8) {
-			currentLevel = number;
-			pickDifficulty = true;
-		}
-		switch(number) {
-		case 0: pickDifficulty = false; tutorial = false; pause = false; playing = false; help = false; finishedSimplifying = false; simplifying = false; break;
-		case 10: tutorial = true; break;  
-		case 20: pickDifficulty = true; playing = false; finishedSimplifying = false; simplificationStep = -1; break;
-		case 25: pickDifficulty = true; currentLevel++; finishedSimplifying = false; simplificationStep = -1; break;
-		case 30: pause = false; help = false; break;
-		case 35: tutorial = true;
-		case 40: help = true;
-		}
-	}
 	
 	@Override
 	public void mouseEntered(MouseEvent arg0) {}

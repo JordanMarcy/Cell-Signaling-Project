@@ -6,19 +6,20 @@ import java.awt.image.BufferedImage;
 
 
 public class CurrentBall {
-	private int strand;
+	private int strand; //Denotes which set of balls this one belongs to
 	private Point position = new Point();
-	private Point arrowPosition = new Point();
-	private Point posChange = new Point(4, 4);
+	private Point arrowPosition = new Point(); //Position of the ball's arrow
+	private Point posChange = new Point(4, 4); //Movement of the ball
 	private BufferedImage ballImage;
 	private BufferedImage arrowImage;
 	private BufferedImage nameImage;
-	private String arrowColor;
-	private ArrowType simplifyType;
+	private String arrowColor; //Used to get the correct color of arrow if the type of arrow changes
+	private ArrowType simplifyType; //Denotes type of arrow
 	
 	private int rotation;
 	private boolean flip;
 	
+	//Getters
 	public int getStrand() {return strand;}
 	public Point getPosition() {return position;}
 	public Point getPosChange() {return posChange;}
@@ -31,6 +32,26 @@ public class CurrentBall {
 	public String getArrowColor() {return arrowColor;}
 	public boolean isFlip() {return flip;}
 	
+	//Setters
+	public void setPos(int x, int y) {position = new Point(x, y);}
+	public void setPosChange(int x, int y) {posChange = new Point(x, y);}
+	public void setArrowImage(BufferedImage arrowImg) {arrowImage = arrowImg;}
+	public void setArrowPos(int x, int y) {arrowPosition = new Point(x, y);}
+	public void setSimplifyType(ArrowType sType) {simplifyType = sType;}
+	public void setMove(int type) {
+		if (type == 1 || type == 2) posChange.x *= -1;
+		if (type == 3 || type == 2) posChange.y *= -1;
+	}
+	public void setArrowImageRotation(int number) {
+		if (flip) rotation = (number+4)%8;
+		else rotation = number;
+	}
+	
+	public void move() {
+		position.x += posChange.x;
+		position.y += posChange.y;
+	}
+	
 	public CurrentBall(int strand, BufferedImage ballImage, BufferedImage nameImage, ArrowType simpleType, BufferedImage arrowImage, boolean flip, String color) {
 		this.strand = strand;
 		this.ballImage = ballImage;
@@ -41,6 +62,7 @@ public class CurrentBall {
 		arrowColor = color;
 	}
 	
+	//Allows for the cloning of a ball.
 	public CurrentBall(CurrentBall ball) {
 		this.strand = ball.getStrand();
 		this.ballImage = ball.getBallImage();
@@ -52,38 +74,9 @@ public class CurrentBall {
 		this.position = ball.getPosition();
 	}
 	
-	public void setPos(int x, int y) {
-		position.x = x;
-		position.y = y;
-	}
+
 	
-	public void setPosChange(int x, int y) {
-		posChange = new Point(x, y);
-	}
-	
-	public void setArrowImage(BufferedImage arrowImg) {
-		arrowImage = arrowImg;
-	}
-	
-	public void setArrowPos(int x, int y) {
-		arrowPosition.x = x;
-		arrowPosition.y = y;
-	}
-	
-	public void setSimplifyType(ArrowType sType) {
-		simplifyType = sType;
-	}
-	
-	public void setMove(int type) {
-		if (type == 1 || type == 2) posChange.x *= -1;
-		if (type == 3 || type == 2) posChange.y *= -1;
-	}
-	
-	public void move() {
-		position.x += posChange.x;
-		position.y += posChange.y;
-	}
-	
+	//Paints the arrow by first rotating the image according to the arrowRotation
 	public void paintArrow(Graphics2D g2d, Game game) {
 		if (arrowImage != null) {
 			AffineTransform affineTransform = new AffineTransform();
@@ -93,9 +86,6 @@ public class CurrentBall {
 		}
 	}
 	
-	public void setImage(int number) {
-		if (flip) rotation = (number+4)%8;
-		else rotation = number;
-	}
+
 		
 }
