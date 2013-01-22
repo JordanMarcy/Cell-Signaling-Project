@@ -34,8 +34,10 @@ public class CurrentBall {
 	
 	//Setters
 	public void setPos(int x, int y) {position = new Point(x, y);}
+	public void setStrand(int strandNum) {strand = strandNum;}
 	public void setPosChange(int x, int y) {posChange = new Point(x, y);}
 	public void setArrowImage(BufferedImage arrowImg) {arrowImage = arrowImg;}
+	public void setBallImage(BufferedImage ballImg) {ballImage = ballImg;}
 	public void setArrowPos(int x, int y) {arrowPosition = new Point(x, y);}
 	public void setSimplifyType(ArrowType sType) {simplifyType = sType;}
 	public void setMove(int type) {
